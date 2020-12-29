@@ -1,7 +1,7 @@
 torch==1.7
 torchaudio
 pyyaml
-librosa
+librosa==0.8
 numpy
 pandas
 tensorboard
