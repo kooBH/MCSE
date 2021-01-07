@@ -53,8 +53,15 @@ def generate(idx):
     item = item.split('.')
     item = item[0]
     
-    estimated_path = estimated_root + dir +'/'+ item + '.wav'
-    noise_mask_path = noise_mask_root + dir +'/'+ item + '.mat'
+    
+    if dir.startswith('tr') :
+        tmp = item.split('_')
+        tmp = tmp[0]+'_'+tmp[1]
+        estimated_path = estimated_root + dir +'/'+ tmp + '.wav'
+        noise_mask_path = noise_mask_root + dir +'/'+ tmp + '.mat'
+    else : 
+        estimated_path = estimated_root + dir +'/'+ item + '.wav'
+        noise_mask_path = noise_mask_root + dir +'/'+ item + '.mat'
     noisy_path = noisy_root + dir + '/' + item + '.CH5.wav'
     
     noisy, sr = librosa.load(noisy_path,sr=16000)
@@ -90,13 +97,13 @@ def generate(idx):
     # Sync Masked 
     noise = librosa.istft(spec_noise,window='hann', hop_length=None , win_length=None ,center=False)
     noise = noise[:len(estim)]
-    spec_noise = librosa.stft(noise,window='hann', n_fft=fft_size, hop_length=None , win_length=None ,center=False)
+    spec_noise = librosa.stft(noise,window='hann', n_fft=fft_size, hop_length=None , win_length=None ,center=False)    
     
     # save
-    np.save(output_root+'noisy/'+dir+'/'+item+'.npy',spec_noisy)
-    np.save(output_root+'noise/'+dir+'/'+item+'.npy',spec_noise)
-    np.save(output_root+'clean/'+dir+'/'+item+'.npy',spec_clean)
-    np.save(output_root+'estim/'+dir+'/'+item+'.npy',spec_estim)
+    np.save(output_root+'noisy/'+dir+'/'+item+'.npy',np.complex64(spec_noisy))
+    np.save(output_root+'noise/'+dir+'/'+item+'.npy',np.complex64(spec_noise))
+    np.save(output_root+'clean/'+dir+'/'+item+'.npy',np.complex64(spec_clean))
+    np.save(output_root+'estim/'+dir+'/'+item+'.npy',np.complex64(spec_estim))
 
 if __name__=='__main__' : 
     
@@ -118,7 +125,7 @@ if __name__=='__main__' :
     
     arr = list(range(len(clean_list)))
     with Pool(cpu_num) as p:
-        r = list(tqdm(p.imap(generate, arr), total=len(arr),ascii=True,desc='Gen'))
-
+        r = list(tqdm(p.imap(generate, arr), total=len(arr),ascii=True,desc='spectra'))
+    #generate(511)
 
 
