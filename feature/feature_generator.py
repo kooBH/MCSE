@@ -25,7 +25,7 @@ noise_mask_root = '/home/data/kbh/CHiME4_CGMM_RLS/trial_04_mask/'
 estimated_root = '/home/data/kbh/CHiME4_CGMM_RLS/trial_04/'
 clean_root = '/home/data/kbh/isolated_ext/'
 
-output_root = '/home/data/kbh/3-channel-dnn/'
+output_root = '/home/data/kbh/3-channel-dnn/STFT/'
 
 clean_list = [x for x in glob.glob(os.path.join(clean_root, '*simu', '*CH5.Clean.wav')) if not os.path.isdir(x)]
 
