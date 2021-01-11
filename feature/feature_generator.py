@@ -25,7 +25,7 @@ noise_mask_root = '/home/data/kbh/CHiME4_CGMM_RLS/trial_04_mask/'
 estimated_root = '/home/data/kbh/CHiME4_CGMM_RLS/trial_04/'
 clean_root = '/home/data/kbh/isolated_ext/'
 
-output_root = '/home/data/kbh/3-channel-dnn/STFT/'
+output_root = '/home/data/kbh/3-channel-dnn/STFT_R/'
 
 clean_list = [x for x in glob.glob(os.path.join(clean_root, '*simu', '*CH5.Clean.wav')) if not os.path.isdir(x)]
 
@@ -98,17 +98,32 @@ def generate(idx):
     noise = librosa.istft(spec_noise,window='hann', hop_length=None , win_length=None ,center=False)
     noise = noise[:len(estim)]
     spec_noise = librosa.stft(noise,window='hann', n_fft=fft_size, hop_length=None , win_length=None ,center=False)    
+    spec_noisy = np.complex64(spec_noisy)
+    spec_noise = np.complex64(spec_noise)
+    spec_estim = np.complex64(spec_estim)
+    spec_clean = np.complex64(spec_clean)
+
+    spec_noisy = np.concatenate((np.expand_dims(spec_noisy.real,-1),np.expand_dims(spec_noisy.imag,-1)),2)
+    spec_noise = np.concatenate((np.expand_dims(spec_noise.real,-1),np.expand_dims(spec_noise.imag,-1)),2)
+    spec_estim = np.concatenate((np.expand_dims(spec_estim.real,-1),np.expand_dims(spec_estim.imag,-1)),2)
+    spec_clean = np.concatenate((np.expand_dims(spec_clean.real,-1),np.expand_dims(spec_clean.imag,-1)),2)
     
     # save
-    np.save(output_root+'noisy/'+dir+'/'+item+'.npy',np.complex64(spec_noisy))
-    np.save(output_root+'noise/'+dir+'/'+item+'.npy',np.complex64(spec_noise))
-    np.save(output_root+'clean/'+dir+'/'+item+'.npy',np.complex64(spec_clean))
-    np.save(output_root+'estim/'+dir+'/'+item+'.npy',np.complex64(spec_estim))
+    np.save(output_root+'noisy/'+dir+'/'+item+'.npy',(spec_noisy))
+    np.save(output_root+'noise/'+dir+'/'+item+'.npy',(spec_noise))
+    np.save(output_root+'clean/'+dir+'/'+item+'.npy',(spec_clean))
+    np.save(output_root+'estim/'+dir+'/'+item+'.npy',(spec_estim))
 
 if __name__=='__main__' : 
     
     list_category = ['dt05_bus_simu','dt05_caf_simu','dt05_ped_simu','dt05_str_simu','et05_bus_simu','et05_caf_simu','et05_ped_simu','et05_str_simu','tr05_bus_simu','tr05_caf_simu','tr05_ped_simu','tr05_str_simu']
     list_dir = ['noise','noisy','clean','estim']
+
+# Directory managing
+    try:
+        os.mkdir(output_root)
+    except FileExistsError:
+        pass
 
     for i in list_dir : 
         try:
