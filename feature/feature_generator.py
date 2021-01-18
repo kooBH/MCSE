@@ -7,7 +7,7 @@ import torchaudio
 import librosa
 import scipy
 import scipy.io
-import soundfile
+import soundfile as sf
 # utils
 from tqdm import tqdm
 from multiprocessing import Pool, cpu_count
@@ -25,7 +25,7 @@ noise_mask_root = '/home/data/kbh/CHiME4_CGMM_RLS/trial_04_mask/'
 estimated_root = '/home/data/kbh/CHiME4_CGMM_RLS/trial_04/'
 clean_root = '/home/data/kbh/isolated_ext/'
 
-output_root = '/home/data/kbh/3-channel-dnn/STFT_R/'
+output_root = '/home/data/kbh/3-channel-dnn/'
 
 clean_list = [x for x in glob.glob(os.path.join(clean_root, '*simu', '*CH5.Clean.wav')) if not os.path.isdir(x)]
 
@@ -76,6 +76,8 @@ def generate(idx):
     noisy = noisy / max_val
     max_val = np.max(np.abs(estim))
     estim = estim / max_val
+    max_val = np.max(np.abs(clean))
+    clean = clean /max_val
 
     unsync_noisy = noisy.view()
     
@@ -109,38 +111,32 @@ def generate(idx):
     spec_clean = np.concatenate((np.expand_dims(spec_clean.real,-1),np.expand_dims(spec_clean.imag,-1)),2)
     
     # save
-    np.save(output_root+'noisy/'+dir+'/'+item+'.npy',(spec_noisy))
-    np.save(output_root+'noise/'+dir+'/'+item+'.npy',(spec_noise))
-    np.save(output_root+'clean/'+dir+'/'+item+'.npy',(spec_clean))
-    np.save(output_root+'estim/'+dir+'/'+item+'.npy',(spec_estim))
+    np.save(output_root+'/STFT_R/noisy/'+dir+'/'+item+'.npy',(spec_noisy))
+    np.save(output_root+'/STFT_R/noise/'+dir+'/'+item+'.npy',(spec_noise))
+    np.save(output_root+'/STFT_R/clean/'+dir+'/'+item+'.npy',(spec_clean))
+    np.save(output_root+'/STFT_R/estim/'+dir+'/'+item+'.npy',(spec_estim))
+
+    sf.write(output_root+'/WAV/clean/'+dir+'/'+item+'.wav',clean,16000,subtype='PCM_16')
+    sf.write(output_root+'/WAV/noisy/'+dir+'/'+item+'.wav',noisy,16000,subtype='PCM_16')
 
 if __name__=='__main__' : 
     
     list_category = ['dt05_bus_simu','dt05_caf_simu','dt05_ped_simu','dt05_str_simu','et05_bus_simu','et05_caf_simu','et05_ped_simu','et05_str_simu','tr05_bus_simu','tr05_caf_simu','tr05_ped_simu','tr05_str_simu']
     list_dir = ['noise','noisy','clean','estim']
 
-# Directory managing
-    try:
-        os.mkdir(output_root)
-    except FileExistsError:
-        pass
-
+# Directory managing for STFT_R
     for i in list_dir : 
-        try:
-            os.mkdir(output_root + i)
-        except FileExistsError:
-            pass
         for j in list_category :
-            try:
-                os.mkdir(output_root + i+'/'+j)
-            except FileExistsError:
-                pass
+                os.makedirs(os.path.join(output_root,'STFT_R' ,i,j),exist_ok=True)
+    for i in ['noisy','clean'] : 
+        for j in list_category :
+                os.makedirs(os.path.join(output_root,'WAV' ,i,j),exist_ok=True)
  
     cpu_num = cpu_count()
     
     arr = list(range(len(clean_list)))
     with Pool(cpu_num) as p:
-        r = list(tqdm(p.imap(generate, arr), total=len(arr),ascii=True,desc='spectra'))
+        r = list(tqdm(p.imap(generate, arr), total=len(arr),ascii=True,desc='Processing'))
     #generate(511)
 
 
