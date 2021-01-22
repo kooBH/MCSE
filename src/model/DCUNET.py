@@ -164,23 +164,25 @@ class ModelDCUNET(nn.Module):
         else:
             raise Exception('Unsupported type for input')
 
-        # go down
-        xs = []
+        # Encoders
+        x_skip = []
         for i, encoder in enumerate(self.encoders):
-            xs.append(x)
+            x_skip.append(x)
             x = encoder(x)
             #print("x{}".format(i), x.shape)
-        # xs : x0=input x1 ... x9
+        # x_skip : x0=input x1 ... x9
 
-        #print(x.shape)
+        #print("fully encoded ",x.shape)
         p = x
+        
+        # Decoders
         for i, decoder in enumerate(self.decoders):
             p = decoder(p)
             if i == self.model_length - 1:
                 break
-            #print(f"p{i}, {p.shape} + x{self.model_length - 1 - i}, {xs[self.model_length - 1 -i].shape}, padding {self.dec_paddings[i]}")
+            #print(f"p{i}, {p.shape} + x{self.model_length - 1 - i}, {x_skip[self.model_length - 1 -i].shape}, padding {self.dec_paddings[i]}")
             
-            p = torch.cat([p, xs[self.model_length - 1 - i]], dim=1)
+            p = torch.cat([p, x_skip[self.model_length - 1 - i]], dim=1)
 
         #print(p.shape)
         mask = self.linear(p)

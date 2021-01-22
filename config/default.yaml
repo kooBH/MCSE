@@ -4,7 +4,7 @@ model :
   FC :
     len : 3
   DCUNET : 
-    frame_num : 41
+    num_frame : 80
 ---
 train:
   epoch: 50

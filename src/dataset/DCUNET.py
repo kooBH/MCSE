@@ -48,8 +48,8 @@ class DatasetDCUNET(torch.utils.data.Dataset):
         npy_estim = npy_estim[:,start:start+self.num_frame,:]
 
         # [samples]
-        npy_wav_clean = npy_wav_clean[start*256:start*256*self.num_frame]
-        npy_wav_noisy = npy_wav_noisy[start*256:start*256*self.num_frame]
+        npy_wav_clean = npy_wav_clean[start*256:start*256 + self.num_frame*256]
+        npy_wav_noisy = npy_wav_noisy[start*256:start*256 + self.num_frame*256]
 
         torch_noisy = torch.from_numpy(npy_noisy)
         torch_noise = torch.from_numpy(npy_noise)

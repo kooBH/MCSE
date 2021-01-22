@@ -4,17 +4,17 @@ import torchaudio
 import os
 import numpy as np
 
-from fairseq import utils
-from model.DCUNET import DCUNET
 from tensorboardX import SummaryWriter
-from dataset import Dataset
+
+from model.DCUNET import ModelDCUNET
+from dataset.DCUNET import DatasetDCUNET
 
 from utils.hparams import HParam
 from utils.wSDRLoss import wSDRLoss
 from utils.writer import MyWriter
 
 def complex_demand_audio(complex_ri, window, length):
-    audio = torchaudio.functional.istft(stft_matrix = complex_ri, n_fft=int(1024), hop_length=int(256), win_length=int(1024), window=window, center=True, pad_mode='reflect', normalized=False, onesided=True, length=length)
+    audio = torch.istft(input= complex_ri, n_fft=int(1024), hop_length=int(256), win_length=int(1024), window=window, center=True, normalized=False, onesided=True, length=length)
     return audio
 
 if __name__ == '__main__':
@@ -33,13 +33,12 @@ if __name__ == '__main__':
     device = hp.gpu
     torch.cuda.set_device(device)
 
-    SNR = hp.train.SNR
     batch_size = hp.train.batch_size
-    frame_num = hp.model.DCUNET.frame_num
+    num_frame = hp.model.DCUNET.num_frame
     num_epochs = hp.train.epoch
     num_workers = hp.train.num_workers
 
-    window = torch.hann_window(window_length=int(1024), periodic=True,
+    window = torch.hann_window(window_length=hp.audio.frame, periodic=True,
                                dtype=None, layout=torch.strided, device=None,
                                requires_grad=False).to(device)
 
@@ -56,13 +55,13 @@ if __name__ == '__main__':
     list_train= ['tr05_bus_simu','tr05_caf_simu','tr05_ped_simu','tr05_str_simu']
     list_test= ['dt05_bus_simu','dt05_caf_simu','dt05_ped_simu','dt05_str_simu','et05_bus_simu','et05_caf_simu','et05_ped_simu','et05_str_simu']
 
-    train_dataset = Dataset(hp.data.root+'/STFT_R',hp.data.root+'/WAV',list_train,'*.npy',frame_num=frame_num)
-    val_dataset   = Dataset(hp.data.root+'/STFT_R',hp.data.root+'/WAV',list_test,'*.npy',frame_num=frame_num)
+    train_dataset = DatasetDCUNET(hp.data.root+'/STFT_R',hp.data.root+'/WAV',list_train,'*.npy',num_frame=num_frame)
+    val_dataset   = DatasetDCUNET(hp.data.root+'/STFT_R',hp.data.root+'/WAV',list_test,'*.npy',num_frame=num_frame)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
     val_loader = torch.utils.data.DataLoader(dataset=val_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers)
 
-    model = DCUNet(input_channels=3).to(device)
+    model = ModelDCUNET(input_channels=3).to(device)
     if not args.chkpt == None : 
         print('NOTE::Loading pre-trained model : '+ args.chkpt)
         model.load_state_dict(torch.load(args.chkpt, map_location=device))
@@ -82,6 +81,8 @@ if __name__ == '__main__':
                 epochs=hp.train.epoch,
                 steps_per_epoch = len(train_loader)
                 )
+    else :
+        raise Exception("Unsupported sceduler type")
 
     step = args.step
 
@@ -93,20 +94,21 @@ if __name__ == '__main__':
             step +=1
 
             spec_input = batch_data["input"].to(device)
-            wav_input = batch_data["noisy"].to(device)
-            wav_target = batch_data["clean"].to(device)
+            wav_noisy= batch_data["noisy"].to(device)
+            wav_clean= batch_data["clean"].to(device)
             
             mask_r, mask_i = model(spec_input)
 
-            enhance_r = spec_input[:, :, :, :, 0] * mask_r
-            enhance_i = spec_input[:, :, :, :, 1] * mask_i
+            # [B, (noisy,noise,clean), F, T, Cplx]
+            enhance_r = spec_input[:, 0, :, :, 0] * mask_r
+            enhance_i = spec_input[:, 0, :, :, 1] * mask_i
 
             enhance_r = enhance_r.unsqueeze(3)
             enhance_i = enhance_i.unsqueeze(3)
             enhance_spec = torch.cat((enhance_r,enhance_i),3)
-            audio_me_pe = complex_demand_audio(enhance_spec,window,audio_maxlen)
+            audio_me_pe = complex_demand_audio(enhance_spec,window,num_frame*hp.audio.shift)
 
-            loss = criterion(wav_input,wav_clean,audio_me_pe,eps=1e-8).to(device)
+            loss = criterion(wav_noisy,wav_clean,audio_me_pe,eps=1e-8).to(device)
 
             optimizer.zero_grad()
             loss.backward()
