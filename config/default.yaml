@@ -8,7 +8,9 @@ model :
 ---
 train:
   epoch: 50
+  # 12
   batch_size: 12
+  # 16
   num_workers: 16
   optimizer: 'adam'
   adam: 0.0001
@@ -40,7 +42,7 @@ audio:
   samplerate : 16000
 ---
 data:
-  root: '/home/data/kbh/3-channel-dnn/'
+  root: '/home/data/3-channel-dnn/'
 ---
   log:
     root: '/home/nas/user/kbh/3-channel-dnn/'

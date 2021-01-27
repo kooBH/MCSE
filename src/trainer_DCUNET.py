@@ -129,28 +129,29 @@ if __name__ == '__main__':
             for j, (batch_data) in enumerate(val_loader):
               
                 spec_input = batch_data["input"].to(device)
-                wav_input = batch_data["noisy"].to(device)
-                wav_target = batch_data["clean"].to(device)
+                wav_noisy  = batch_data["noisy"].to(device)
+                wav_clean  = batch_data["clean"].to(device)
             
                 mask_r, mask_i = model(spec_input)
 
-                enhance_r = spec_input[:, :, :, :, 0] * mask_r
-                enhance_i = spec_input[:, :, :, :, 1] * mask_i
+                # [B, (noisy,noise,clean), F, T, Cplx]
+                enhance_r = spec_input[:, 0, :, :, 0] * mask_r
+                enhance_i = spec_input[:, 0, :, :, 1] * mask_i
 
                 enhance_r = enhance_r.unsqueeze(3)
                 enhance_i = enhance_i.unsqueeze(3)
                 enhance_spec = torch.cat((enhance_r,enhance_i),3)
-                audio_me_pe = complex_demand_audio(enhance_spec,window,audio_maxlen).to(device)
+                audio_me_pe = complex_demand_audio(enhance_spec,window,num_frame*hp.audio.shift).to(device)
                 
-                loss = criterion(wav_input,wav_clean,audio_me_pe,eps=1e-8).to(device)
+                loss = criterion(wav_noisy,wav_clean,audio_me_pe,eps=1e-8).to(device)
                 print('TEST::Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, j+1, len(val_loader), loss.item()))
                 val_loss +=loss.item()
 
             val_loss = val_loss/len(val_loader)
             scheduler.step(val_loss)
 
-            input_audio = input_audio[0].cpu().numpy()
-            target_audio= target_audio[0].cpu().numpy()
+            input_audio = wav_noisy[0].cpu().numpy()
+            target_audio= wav_clean[0].cpu().numpy()
             audio_me_pe= audio_me_pe[0].cpu().numpy()
 
             writer.log_evaluation(val_loss,

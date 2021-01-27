@@ -19,9 +19,9 @@ class MyWriter(SummaryWriter):
         
         self.add_scalar('test_loss', test_loss, step)
 
-        self.add_audio('mixed_wav', mixed_wav, step, self.hp.audio.sample_rate)
-        self.add_audio('target_wav', target_wav, step, self.hp.audio.sample_rate)
-        self.add_audio('estimated_wav', est_wav, step, self.hp.audio.sample_rate)
+        self.add_audio('mixed_wav', mixed_wav, step, self.hp.audio.samplerate)
+        self.add_audio('target_wav', target_wav, step, self.hp.audio.samplerate)
+        self.add_audio('estimated_wav', est_wav, step, self.hp.audio.samplerate)
 """
         self.add_image('data/mixed_spectrogram',
             plot_spectrogram_to_numpy(mixed_spec), step, dataformats='HWC')
