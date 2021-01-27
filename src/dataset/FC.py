@@ -4,8 +4,9 @@ import librosa
 import numpy as np
 
 class DatasetFC(torch.utils.data.Dataset):
-    def __init__(self, stft_root,target, form):
+    def __init__(self, stft_root,target, form,len=3):
         self.stft_root = stft_root
+        self.len = len
 
         if type(target) == str : 
             self.data_list = [x for x in glob.glob(os.path.join(stft_root+'/noisy/', target, form), recursive=False) if not os.path.isdir(x)]
@@ -20,8 +21,8 @@ class DatasetFC(torch.utils.data.Dataset):
         for i in range(len(self.data_list)) : 
             tmp = self.data_list[i]
             tmp = tmp.split('/')
-            self.data_list[i] = tmp[-3] + '/' + tmp[-1]
-            self.data_list[i] = (self.data_list[i].split('.'))[-1]
+            self.data_list[i] = tmp[-2] + '/' + tmp[-1]
+            self.data_list[i] = (self.data_list[i].split('.'))[0]
 
     def __getitem__(self, index):
         path = self.data_list[index]
@@ -34,17 +35,17 @@ class DatasetFC(torch.utils.data.Dataset):
         ## sampling routine ##
 
         # [Freq, Time, complex] 
-        length = np.size(npy_noisy,0)
-        # rand on start index
-        length = length - 5
+        length = np.size(npy_noisy,1)  
+        # rand on start index  
+        length = length - (2*self.len + 1)
         start = np.random.randint(length)
 
-        npy_noisy = npy_noisy[:,start:start+6,:]
-        npy_noise= npy_noise[:,start:start+6,:]
-        npy_estim= npy_estim[:,start:start+6,:]
+        npy_noisy = npy_noisy[:,start:start+2*self.len,:]
+        npy_noise = npy_noise[:,start:start+2*self.len,:]
+        npy_estim = npy_estim[:,start:start+2*self.len,:]
+        npy_clean = npy_clean[:,start+self.len,:]
 
         # Since single frame output
-        npy_clean = npy_clean[:,start+2,:]
 
         torch_noisy = torch.from_numpy(npy_noisy)
         torch_noise = torch.from_numpy(npy_noise)
@@ -52,8 +53,10 @@ class DatasetFC(torch.utils.data.Dataset):
         torch_clean = torch.from_numpy(npy_clean)
 
         """
-        input : 2-channel (noisy,estim,clean)
+        input : flat data for 2*length +1 frame complex(noisy + estim + noise )
+        target : 1 frame complex (clean)
         """
+
         data = {"input":torch.stack((torch_noisy,torch_estim,torch_noise),-1), "target":torch_clean}
         return data
 

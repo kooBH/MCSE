@@ -36,7 +36,7 @@ class DatasetDCUNET(torch.utils.data.Dataset):
         npy_wav_clean,sr = librosa.load(self.wav_root+'/'+'clean'+'/'+self.data_list[index]+'.wav',sr=16000)
         npy_wav_noisy,sr = librosa.load(self.wav_root+'/'+'noisy'+'/'+self.data_list[index]+'.wav',sr=16000)
 
-        # sampling routine
+        ## sampling routine ##
 
         # [Freq, Time, complex] 
         length = np.size(npy_noisy, 1)
