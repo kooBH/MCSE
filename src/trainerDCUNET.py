@@ -6,8 +6,8 @@ import numpy as np
 
 from tensorboardX import SummaryWriter
 
-from model.DCUNET import ModelDCUNET
-from dataset.DCUNET import DatasetDCUNET
+from model.ModelDCUNET import ModelDCUNET
+from dataset.DatasetDCUNET import DatasetDCUNET
 
 from utils.hparams import HParam
 from utils.wSDRLoss import wSDRLoss

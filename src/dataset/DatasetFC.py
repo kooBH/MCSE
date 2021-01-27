@@ -4,9 +4,9 @@ import librosa
 import numpy as np
 
 class DatasetFC(torch.utils.data.Dataset):
-    def __init__(self, stft_root,target, form,len=3):
+    def __init__(self, stft_root,target, form,block=3):
         self.stft_root = stft_root
-        self.len = len
+        self.block = block
 
         if type(target) == str : 
             self.data_list = [x for x in glob.glob(os.path.join(stft_root+'/noisy/', target, form), recursive=False) if not os.path.isdir(x)]
@@ -37,13 +37,13 @@ class DatasetFC(torch.utils.data.Dataset):
         # [Freq, Time, complex] 
         length = np.size(npy_noisy,1)  
         # rand on start index  
-        length = length - (2*self.len + 1)
+        length = length - (2*self.block + 1)
         start = np.random.randint(length)
 
-        npy_noisy = npy_noisy[:,start:start+2*self.len,:]
-        npy_noise = npy_noise[:,start:start+2*self.len,:]
-        npy_estim = npy_estim[:,start:start+2*self.len,:]
-        npy_clean = npy_clean[:,start+self.len,:]
+        npy_noisy = npy_noisy[:,start:start+(2*self.block+1),:]
+        npy_noise = npy_noise[:,start:start+(2*self.block+1),:]
+        npy_estim = npy_estim[:,start:start+(2*self.block+1),:]
+        npy_clean = npy_clean[:,start+self.block,:]
 
         # Since single frame output
 
@@ -56,8 +56,10 @@ class DatasetFC(torch.utils.data.Dataset):
         input : flat data for 2*length +1 frame complex(noisy + estim + noise )
         target : 1 frame complex (clean)
         """
+        torch_input = torch.stack((torch_noisy,torch_estim,torch_noise),1)
+        torch_input = torch.reshape(torch_input,(513*3*(2*self.block+1),2))
 
-        data = {"input":torch.stack((torch_noisy,torch_estim,torch_noise),-1), "target":torch_clean}
+        data = {"input":torch_input, "target":torch_clean}
         return data
 
     def __len__(self):

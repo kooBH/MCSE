@@ -1,8 +1,8 @@
-gpu: 'cuda:0'
+gpu: 'cuda:1'
 ---
 model :
   FC :
-    block : 3
+    block: 3
   DCUNET : 
     num_frame : 80
 ---
@@ -42,7 +42,7 @@ audio:
   samplerate : 16000
 ---
 data:
-  root: '/home/data/3-channel-dnn/'
+  root: '/home/data/kbh/3-channel-dnn/'
 ---
   log:
     root: '/home/nas/user/kbh/3-channel-dnn/'
