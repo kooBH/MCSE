@@ -12,17 +12,17 @@ class MyWriter(SummaryWriter):
     def log_training(self, train_loss, step):
         self.add_scalar('train_loss', train_loss, step)
 
-    def log_evaluation(self, test_loss,
-                       mixed_wav=None, target_wav=None, est_wav=None,
-#                       mixed_spec, target_spec, est_spec,
-                       step):
+    def log_evaluation_scalar_only(self, test_loss,step): 
+        self.add_scalar('test_loss', test_loss, step)
+
+    def log_evaluation(self, test_loss,step,
+                       mixed_wav, target_wav, est_wav):
         
         self.add_scalar('test_loss', test_loss, step)
 
-        if mixed_wav != None : 
-            self.add_audio('mixed_wav', mixed_wav, step, self.hp.audio.samplerate)
-            self.add_audio('target_wav', target_wav, step, self.hp.audio.samplerate)
-            self.add_audio('estimated_wav', est_wav, step, self.hp.audio.samplerate)
+        self.add_audio('mixed_wav', mixed_wav, step, self.hp.audio.samplerate)
+        self.add_audio('target_wav', target_wav, step, self.hp.audio.samplerate)
+        self.add_audio('estimated_wav', est_wav, step, self.hp.audio.samplerate)
 """
         self.add_image('data/mixed_spectrogram',
             plot_spectrogram_to_numpy(mixed_spec), step, dataformats='HWC')

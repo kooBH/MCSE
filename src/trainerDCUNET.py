@@ -154,10 +154,8 @@ if __name__ == '__main__':
             target_audio= wav_clean[0].cpu().numpy()
             audio_me_pe= audio_me_pe[0].cpu().numpy()
 
-            writer.log_evaluation(val_loss,
-                                  input_audio,target_audio,audio_me_pe,
-                                  #input_spec, target_spec,enhance_spec,
-                                  step)
+            writer.log_evaluation(val_loss,step,
+                                  input_audio,target_audio,audio_me_pe)
 
             if best_loss > val_loss:
                 torch.save(model.state_dict(), str(modelsave_path)+'/bestmodel.pt')

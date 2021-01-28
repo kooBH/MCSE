@@ -33,8 +33,6 @@ class ModelFC(nn.Module):
 
     def forward(self,x):
         # [B, input_size, 2 ]
-        display(x[:,:,0].shape)
-        display(x[:,:,1].shape)
         output_real = self.model_real(x[:,:,0])
         output_complex = self.model_complex(x[:,:,1])
 

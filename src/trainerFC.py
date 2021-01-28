@@ -104,14 +104,14 @@ if __name__ == '__main__':
             print('TRAIN::Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, i+1, len(train_loader), loss.item()))
             train_loss+=loss.item()
 
-            if step %  hp.train.summary_intertest == 0:
+            if step %  hp.train.summary_interval == 0:
                 writer.log_training(loss,step)
 
         train_loss = train_loss/len(train_loader)
         torch.save(model.state_dict(), str(modelsave_path)+'/lastmodel.pth')
             
         #### EVAL ####
-        model.etest()
+        model.eval()
         with torch.no_grad():
             test_loss =0.
             for j, (batch_data) in enumerate(test_loader):
@@ -128,14 +128,13 @@ if __name__ == '__main__':
             test_loss = test_loss/len(test_loader)
             scheduler.step(test_loss)
 
-            input_audio = wav_noisy[0].cpu().numpy()
-            target_audio= wav_clean[0].cpu().numpy()
-            audio_me_pe= audio_me_pe[0].cpu().numpy()
+            #input_audio = wav_noisy[0].cpu().numpy()
+            #target_audio= wav_clean[0].cpu().numpy()
+            #audio_me_pe= audio_me_pe[0].cpu().numpy()
 
-            writer.log_etestuation(test_loss,
-                                  input_audio,target_audio,audio_me_pe,
-                                  #input_spec, target_spec,enhance_spec,
-                                  step)
+            writer.log_evaluation_scalar_only(test_loss,step)
+            #                      input_audio,target_audio,audio_me_pe)
+    
 
             if best_loss > test_loss:
                 torch.save(model.state_dict(), str(modelsave_path)+'/bestmodel.pt')
