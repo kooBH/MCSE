@@ -1,6 +1,13 @@
 import torch
 import torch.nn as nn
 
+"""
+2021.01.28 
+    add batch-norm
+2021.01.29
+    add dropout
+
+"""
 
 class ModelFC(nn.Module):
     def __init__(self,hp):
@@ -10,22 +17,34 @@ class ModelFC(nn.Module):
         self.block_len = 2*self.block+1
         self.hfft = int(hp.audio.frame/2 + 1)
         self.input_size = self.hfft*self.block_len*3
+
+        dropout = hp.model.FC.dropout
+
         print('ModelFC[input_size] : '+ str(self.input_size))
 
         self.model_real = torch.nn.Sequential(
             torch.nn.Linear(self.input_size,1024),
+            torch.nn.BatchNorm1d(1024),
             torch.nn.Sigmoid(),
+            torch.nn.Dropout(dropout),
             torch.nn.Linear(1024,1024),
+            torch.nn.BatchNorm1d(1024),
             torch.nn.Sigmoid(),
+            torch.nn.Dropout(dropout),
             torch.nn.Linear(1024,self.hfft),
             torch.nn.ReLU()
+            
             #torch.nn.LeakyReLU(negative_slope=0.01)
         )
         self.model_complex = torch.nn.Sequential(
             torch.nn.Linear(self.input_size,1024),
+            torch.nn.BatchNorm1d(1024),
             torch.nn.Sigmoid(),
+            torch.nn.Dropout(dropout),
             torch.nn.Linear(1024,1024),
+            torch.nn.BatchNorm1d(1024),
             torch.nn.Sigmoid(),
+            torch.nn.Dropout(dropout),
             torch.nn.Linear(1024,self.hfft),
             torch.nn.ReLU()
             #torch.nn.LeakyReLU(negative_slope=0.01)
