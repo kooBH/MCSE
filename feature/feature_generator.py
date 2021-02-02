@@ -121,7 +121,7 @@ def generate(idx):
 
 if __name__=='__main__' : 
     
-    list_category = ['dt05_bus_simu','dt05_caf_simu','dt05_ped_simu','dt05_str_simu','et05_bus_simu','et05_caf_simu','et05_ped_simu','et05_str_simu','tr05_bus_simu','tr05_caf_simu','tr05_ped_simu','tr05_str_simu']
+    list_category = ['dt05_bus_simu','dt05_caf_simu','dt05_ped_simu','dt05_str_simu','et05_bus_simu','et05_caf_simu','et05_ped_simu','et05_str_simu','dt05_bus_real','dt05_caf_real','dt05_ped_real','dt05_str_real','et05_bus_real','et05_caf_real','et05_ped_real','et05_str_real','tr05_bus_simu','tr05_caf_simu','tr05_ped_simu','tr05_str_simu']
     list_dir = ['noise','noisy','clean','estim']
 
 # Directory managing for STFT_R
