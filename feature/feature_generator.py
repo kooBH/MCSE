@@ -27,7 +27,7 @@ clean_root = '/home/data/kbh/isolated_ext/'
 
 output_root = '/home/data/kbh/3-channel-dnn/'
 
-clean_list = [x for x in glob.glob(os.path.join(clean_root, '*simu', '*CH5.Clean.wav')) if not os.path.isdir(x)]
+clean_list = [x for x in glob.glob(os.path.join(clean_root, '*', '*CH5.Clean.wav')) if not os.path.isdir(x)]
 
 ## for Syncronization ##
 def cross_correlation_using_fft(x, y):
