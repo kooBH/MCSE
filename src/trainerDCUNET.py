@@ -13,10 +13,6 @@ from utils.hparams import HParam
 from utils.wSDRLoss import wSDRLoss
 from utils.writer import MyWriter
 
-def complex_demand_audio(complex_ri, window, length):
-    audio = torch.istft(input= complex_ri, n_fft=int(1024), hop_length=int(256), win_length=int(1024), window=window, center=True, normalized=False, onesided=True, length=length)
-    return audio
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', '-c', type=str, required=True,
@@ -106,7 +102,8 @@ if __name__ == '__main__':
             enhance_r = enhance_r.unsqueeze(3)
             enhance_i = enhance_i.unsqueeze(3)
             enhance_spec = torch.cat((enhance_r,enhance_i),3)
-            audio_me_pe = complex_demand_audio(enhance_spec,window,num_frame*hp.audio.shift)
+            audio_me_pe = torch.istft(enhance_spec,n_fft=hp.audio.frame, hop_length = hp.audio.shift, window=window, center = True, normalized=False,onesided=True,length=num_frame*hp.audio.shift)
+
 
             loss = criterion(wav_noisy,wav_clean,audio_me_pe,eps=1e-8).to(device)
 
@@ -141,8 +138,7 @@ if __name__ == '__main__':
                 enhance_r = enhance_r.unsqueeze(3)
                 enhance_i = enhance_i.unsqueeze(3)
                 enhance_spec = torch.cat((enhance_r,enhance_i),3)
-                audio_me_pe = complex_demand_audio(enhance_spec,window,num_frame*hp.audio.shift).to(device)
-                
+                audio_me_pe = torch.istft(enhance_spec,n_fft=hp.audio.frame, hop_length = hp.audio.shift, window=window, center = True, normalized=False,onesided=True,length=num_frame*hp.audio.shift).to(device)                
                 loss = criterion(wav_noisy,wav_clean,audio_me_pe,eps=1e-8).to(device)
                 print('TEST::Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, j+1, len(val_loader), loss.item()))
                 val_loss +=loss.item()

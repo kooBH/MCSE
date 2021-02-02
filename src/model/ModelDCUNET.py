@@ -169,7 +169,7 @@ class ModelDCUNET(nn.Module):
         for i, encoder in enumerate(self.encoders):
             x_skip.append(x)
             x = encoder(x)
-            #print("x{}".format(i), x.shape)
+           # print("x{}".format(i), x.shape)
         # x_skip : x0=input x1 ... x9
 
         #print("fully encoded ",x.shape)
@@ -184,7 +184,7 @@ class ModelDCUNET(nn.Module):
             
             p = torch.cat([p, x_skip[self.model_length - 1 - i]], dim=1)
 
-        #print(p.shape)
+        #:print(p.shape)
         mask = self.linear(p)
         mask = torch.tanh(mask)
         mask = torch.squeeze(mask,1)

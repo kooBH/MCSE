@@ -20,35 +20,90 @@ class ModelFC(nn.Module):
 
         dropout = hp.model.FC.dropout
 
-        print('ModelFC[input_size] : '+ str(self.input_size))
+#        print('ModelFC[input_size] : '+ str(self.input_size))
 
-        self.model_real = torch.nn.Sequential(
-            torch.nn.Linear(self.input_size,1024),
-            torch.nn.BatchNorm1d(1024),
-            torch.nn.Sigmoid(),
-            torch.nn.Dropout(dropout),
-            torch.nn.Linear(1024,1024),
-            torch.nn.BatchNorm1d(1024),
-            torch.nn.Sigmoid(),
-            torch.nn.Dropout(dropout),
-            torch.nn.Linear(1024,self.hfft),
-            torch.nn.ReLU()
-            
-            #torch.nn.LeakyReLU(negative_slope=0.01)
-        )
-        self.model_complex = torch.nn.Sequential(
-            torch.nn.Linear(self.input_size,1024),
-            torch.nn.BatchNorm1d(1024),
-            torch.nn.Sigmoid(),
-            torch.nn.Dropout(dropout),
-            torch.nn.Linear(1024,1024),
-            torch.nn.BatchNorm1d(1024),
-            torch.nn.Sigmoid(),
-            torch.nn.Dropout(dropout),
-            torch.nn.Linear(1024,self.hfft),
-            torch.nn.ReLU()
-            #torch.nn.LeakyReLU(negative_slope=0.01)
-        )
+        if hp.model.FC.version == 2 : 
+            self.model_real = torch.nn.Sequential(
+                torch.nn.Linear(self.input_size,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Linear(1024,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Linear(1024,self.hfft),
+                torch.nn.ReLU()
+            )
+            self.model_complex = torch.nn.Sequential(
+                torch.nn.Linear(self.input_size,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Linear(1024,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Linear(1024,self.hfft),
+                torch.nn.ReLU()
+            )
+        elif hp.model.FC.version == 3 :
+            self.model_real = torch.nn.Sequential(
+                torch.nn.Linear(self.input_size,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Dropout(dropout),
+                torch.nn.Linear(1024,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Dropout(dropout),
+                torch.nn.Linear(1024,self.hfft),
+                torch.nn.ReLU()
+            )
+            self.model_complex = torch.nn.Sequential(
+                torch.nn.Linear(self.input_size,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Dropout(dropout),
+                torch.nn.Linear(1024,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Dropout(dropout),
+                torch.nn.Linear(1024,self.hfft),
+                torch.nn.ReLU()
+            )
+        elif hp.model.FC.version == 4:
+            self.model_real = torch.nn.Sequential(
+                torch.nn.Linear(self.input_size,2048),
+                torch.nn.BatchNorm1d(2048),
+                torch.nn.Sigmoid(),
+                torch.nn.Dropout(dropout),
+                torch.nn.Linear(2048,2048),
+                torch.nn.BatchNorm1d(2048),
+                torch.nn.Sigmoid(),
+                torch.nn.Dropout(dropout),
+                torch.nn.Linear(2048,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Dropout(dropout),
+                torch.nn.Linear(1024,self.hfft),
+                torch.nn.LeakyReLU(negative_slope=0.01)
+            )
+            self.model_complex = torch.nn.Sequential(
+                torch.nn.Linear(self.input_size,2048),
+                torch.nn.BatchNorm1d(2048),
+                torch.nn.Sigmoid(),
+                torch.nn.Dropout(dropout),
+                torch.nn.Linear(2048,2048),
+                torch.nn.BatchNorm1d(2048),
+                torch.nn.Sigmoid(),
+                torch.nn.Dropout(dropout),
+                torch.nn.Linear(2048,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Dropout(dropout),
+                torch.nn.Linear(1024,self.hfft),
+                torch.nn.LeakyReLU(negative_slope=0.01)
+            )
+
+        else :
+            raise Exception("Unknown model version")
 
     def forward(self,x):
         # [B, input_size, 2 ]

@@ -2,6 +2,7 @@ gpu: 'cuda:1'
 ---
 model :
   FC :
+    version: 3
     block: 3
     dropout : 0.5
   DCUNET : 
