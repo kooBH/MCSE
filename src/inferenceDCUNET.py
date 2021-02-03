@@ -34,7 +34,7 @@ if __name__ == '__main__':
  
 
     ## dirs 
-    list_test= ['dt05_bus_simu','dt05_caf_simu','dt05_ped_simu','dt05_str_simu','et05_bus_simu','et05_caf_simu','et05_ped_simu','et05_str_simu']
+    list_test= ['dt05_bus_real','dt05_caf_real','dt05_ped_real','dt05_str_real','et05_bus_real','et05_caf_real','et05_ped_real','et05_str_real','dt05_bus_simu','dt05_caf_simu','dt05_ped_simu','dt05_str_simu','et05_bus_simu','et05_caf_simu','et05_ped_simu','et05_str_simu']
     output_dir = args.output_dir
     os.makedirs(output_dir,exist_ok=True)
     for i in list_test :
@@ -56,9 +56,16 @@ if __name__ == '__main__':
             spec_input = data.to(device)
             mask_r,mask_i = model(spec_input)
 
-            # [B, (noisy,noise,clean), F, T, Cplx]
-            enhance_r = spec_input[:,0,:,:,0] * mask_r
-            enhance_i = spec_input[:,0,:,:,1] * mask_i
+            # [B, (noisy,estim,noise), F, T, Cplx]
+            if hp.model.DCUNET.input =='estim':
+                enhance_r = spec_input[:, 1, :, :, 0] * mask_r
+                enhance_i = spec_input[:, 1, :, :, 1] * mask_i
+            # default noisy
+            else :
+                enhance_r = spec_input[:, 0, :, :, 0] * mask_r
+                enhance_i = spec_input[:, 0, :, :, 1] * mask_i
+
+
 
             enhance_r = enhance_r.unsqueeze(3)
             enhance_i = enhance_i.unsqueeze(3)

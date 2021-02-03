@@ -2,9 +2,13 @@ gpu: 'cuda:1'
 ---
 model :
   FC :
-    block: 3
+    block : 3
   DCUNET : 
     num_frame : 80
+    # num_frame must be multiple of 16
+    num_frame : 80
+    # input : 'noisy', 'estim'
+    input : 'estim'
 ---
 train:
   epoch: 50
@@ -27,7 +31,7 @@ loss:
   type: 'wSDR'
 ---
 scheduler: # Plateau, oneCycle, None
-  type: 'Plateau'
+  type: 'oneCycle'
   oneCycle:
     max_lr: 0.0001
   Plateau:
@@ -42,7 +46,7 @@ audio:
   samplerate : 16000
 ---
 data:
-  root: '/home/data/3-channel-dnn/'
+  root: '/home/data/kbh/3-channel-dnn/'
 ---
   log:
     root: '/home/nas/user/kbh/3-channel-dnn/'

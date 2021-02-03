@@ -132,4 +132,5 @@ dmypy.json
 *.wav
 *.npy
 
-
+# temp files
+*.swp
