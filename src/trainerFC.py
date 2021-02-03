@@ -132,7 +132,7 @@ if __name__ == '__main__':
             #target_audio= wav_clean[0].cpu().numpy()
             #audio_me_pe= audio_me_pe[0].cpu().numpy()
 
-            writer.log_evaluation_scalar_only(test_loss,step)
+            writer.log_evaluation_scalar(test_loss,step)
             #                      input_audio,target_audio,audio_me_pe)
     
 
