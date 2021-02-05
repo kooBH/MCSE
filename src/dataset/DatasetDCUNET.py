@@ -40,13 +40,15 @@ class DatasetDCUNET(torch.utils.data.Dataset):
 
         # [Freq, Time, complex] 
         length = np.size(npy_noisy, 1)
-        over = length - self.num_frame
-        need = -over
+        need = self.num_frame - length
 
         start = 0
 
-        if over >= 0 :
-            start = np.random.randint(low=0,high=over)
+        if need <= 0 :
+            if need != 0:
+                start = np.random.randint(low=0,high=-need)
+            else :
+                start = 0
 
             npy_noisy = npy_noisy[:,start:start+self.num_frame,:]
             npy_noise = npy_noise[:,start:start+self.num_frame,:]
@@ -56,7 +58,7 @@ class DatasetDCUNET(torch.utils.data.Dataset):
             npy_wav_clean = npy_wav_clean[start*256:start*256 + self.num_frame*256]
             npy_wav_noisy = npy_wav_noisy[start*256:start*256 + self.num_frame*256]
         # zero-padding
-        else :
+        elif need > 0 :
             npy_noisy =  np.pad(npy_noisy,((0,0),(0,need),(0,0)),'constant',constant_values=0)
             npy_noise =  np.pad(npy_noise,((0,0),(0,need),(0,0)),'constant',constant_values=0)
             npy_estim =  np.pad(npy_estim,((0,0),(0,need),(0,0)),'constant',constant_values=0)

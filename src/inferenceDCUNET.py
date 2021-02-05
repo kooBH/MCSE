@@ -15,6 +15,7 @@ if __name__ == '__main__':
     parser.add_argument('-c','--config',type=str,required=True)
     parser.add_argument('-m','--model',type=str,default='./model_ckpt/bestmodel.pth')
     parser.add_argument('-o','--output_dir',type=str,required=True)
+    parser.add_argument('-t','--type',type=str,default='respective')
     args = parser.parse_args()
 
 
@@ -65,13 +66,25 @@ if __name__ == '__main__':
                 enhance_r = spec_input[:, 0, :, :, 0] * mask_r
                 enhance_i = spec_input[:, 0, :, :, 1] * mask_i
 
-
-
             enhance_r = enhance_r.unsqueeze(3)
             enhance_i = enhance_i.unsqueeze(3)
 
             enhance_spec = torch.cat((enhance_r,enhance_i),3)
-            audio_me_pe = torch.istft(enhance_spec,n_fft=hp.audio.frame, hop_length = hp.audio.shift, window=window, center = True, normalized=False,onesided=True,length=int(length)*hp.audio.shift)
+
+            if args.type == 'respective' : 
+                audio_me_pe = torch.istft(enhance_spec,n_fft=hp.audio.frame, hop_length = hp.audio.shift, window=window, center = True, normalized=False,onesided=True,length=int(length)*hp.audio.shift)
+            elif args.type == 'magnitude':
+                enhance_mag,enhance_phase = torchaudio.functional.magphase(enhance_spec) 
+
+                noisy_spec = torch.cat((spec_input[:,0,:,:,0].unsqueeze(3),spec_input[:,0,:,:,1].unsqueeze(3)),3)
+                noisy_mag,noisy_phase = torchaudio.functional.magphase(noisy_spec)
+
+                output_spec = enhance_mag * torch.exp(1j*noisy_phase)
+
+                output_spec = torch.view_as_real(output_spec)
+                audio_me_pe = torch.istft(enhance_spec,n_fft=hp.audio.frame, hop_length = hp.audio.shift, window=window,center =True, normalized=False,onesided=True,length=int(length)*hp.audio.shift)
+            else :
+                raise TypeError('Unknown mask type')
 
 
             audio_me_pe=audio_me_pe.to('cpu')

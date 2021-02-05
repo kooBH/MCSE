@@ -5,14 +5,14 @@ model :
     block : 3
   DCUNET : 
     # num_frame must be multiple of 16
-    num_frame : 80
+    num_frame : 160
     # input : 'noisy', 'estim'
-    input : 'estim'
+    input : 'noisy'
 ---
 train:
   epoch: 50
   # 12
-  batch_size: 12
+  batch_size: 6
   # 16
   num_workers: 16
   optimizer: 'adam'
@@ -30,7 +30,7 @@ loss:
   type: 'wSDR'
 ---
 scheduler: # Plateau, oneCycle, None
-  type: 'oneCycle'
+  type: 'Plateau'
   oneCycle:
     max_lr: 0.0001
   Plateau:

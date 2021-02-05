@@ -15,4 +15,4 @@
 #python ./src/trainerDCUNET.py -c ./config/DCUNET_t2.yaml -v DCUNET_t2 --chkpt /home/nas/user/kbh/3-channel-dnn/chkpt/DCUNET_t2/bestmodel.pt -s 29750
 
 # 2021-02-03
-python ./src/trainerDCUNET.py -c ./config/DCUNET_t3.yaml -v DCUNET_t3
+python ./src/trainerDCUNET.py -c ./config/DCUNET_t3.yaml -v DCUNET_t3 -s 39750 --chkpt /home/nas/user/kbh/3-channel-dnn/chkpt/DCUNET_t3/bestmodel.pt
