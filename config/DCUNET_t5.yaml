@@ -2,18 +2,19 @@ gpu: 'cuda:0'
 ---
 model :
   FC :
-    block: 3
-    version : 2
-    dropout : 0.5
+    block : 3
   DCUNET : 
-    num_frame : 80
+    # num_frame must be multiple of 16
+    num_frame : 48
+    # input : 'noisy', 'estim'
+    input : 'noisy'
 ---
 train:
-  epoch: 500
+  epoch: 200
   # 12
-  batch_size: 64
+  batch_size: 20
   # 16
-  num_workers: 8
+  num_workers: 16
   optimizer: 'adam'
   adam: 0.0001
   adabound:
@@ -44,7 +45,6 @@ audio:
   samplerate : 16000
 ---
 data:
-  #root: '/home/data/3-channel-dnn/'
   root: '/home/data/kbh/3-channel-dnn/'
 ---
   log:

@@ -101,6 +101,27 @@ class ModelFC(nn.Module):
                 torch.nn.Linear(1024,self.hfft),
                 torch.nn.LeakyReLU(negative_slope=0.01)
             )
+        elif hp.model.FC.version == 5 :
+             self.model_real = torch.nn.Sequential(
+                torch.nn.Linear(self.input_size,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Linear(1024,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Linear(1024,self.hfft),
+                torch.nn.tanh()
+            )
+            self.model_complex = torch.nn.Sequential(
+                torch.nn.Linear(self.input_size,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Linear(1024,1024),
+                torch.nn.BatchNorm1d(1024),
+                torch.nn.Sigmoid(),
+                torch.nn.Linear(1024,self.hfft),
+                torch.nn.tanh()
+            )
 
         else :
             raise Exception("Unknown model version")

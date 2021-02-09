@@ -10,7 +10,7 @@ model :
     input : 'estim'
 ---
 train:
-  epoch: 50
+  epoch: 300
   # 12
   batch_size: 12
   # 16

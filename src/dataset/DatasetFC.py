@@ -3,7 +3,7 @@ import torch
 import librosa
 import numpy as np
 
-class DatasetFC(torch.utils.data.Dataset):
+class (torch.utils.data.Dataset):
     def __init__(self, stft_root,target, form,block=3):
         self.stft_root = stft_root
         self.block = block

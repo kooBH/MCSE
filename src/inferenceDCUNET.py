@@ -18,7 +18,6 @@ if __name__ == '__main__':
     parser.add_argument('-t','--type',type=str,default='respective')
     args = parser.parse_args()
 
-
     ## Parameters 
     hp = HParam(args.config)
     print('NOTE::Loading configuration :: ' + args.config)
@@ -33,7 +32,6 @@ if __name__ == '__main__':
 
     window=torch.hann_window(window_length=int(win_len), periodic=True, dtype=None, layout=torch.strided, device=None, requires_grad=False).to(device)
  
-
     ## dirs 
     list_test= ['dt05_bus_real','dt05_caf_real','dt05_ped_real','dt05_str_real','et05_bus_real','et05_caf_real','et05_ped_real','et05_str_real','dt05_bus_simu','dt05_caf_simu','dt05_ped_simu','dt05_str_simu','et05_bus_simu','et05_caf_simu','et05_ped_simu','et05_str_simu']
     output_dir = args.output_dir
@@ -83,9 +81,18 @@ if __name__ == '__main__':
 
                 output_spec = torch.view_as_real(output_spec)
                 audio_me_pe = torch.istft(enhance_spec,n_fft=hp.audio.frame, hop_length = hp.audio.shift, window=window,center =True, normalized=False,onesided=True,length=int(length)*hp.audio.shift)
+            elif args.type == 'magnitude_with_estim_phase' :
+                enhance_mag,enhance_phase = torchaudio.functional.magphase(enhance_spec) 
+
+                estim_spec = torch.cat((spec_input[:,0,:,:,0].unsqueeze(3),spec_input[:,0,:,:,1].unsqueeze(3)),3)
+                estim_mag,estim_phase = torchaudio.functional.magphase(estim_spec)
+
+                output_spec = enhance_mag * torch.exp(1j*estim_phase)
+
+                output_spec = torch.view_as_real(output_spec)
+                audio_me_pe = torch.istft(enhance_spec,n_fft=hp.audio.frame, hop_length = hp.audio.shift, window=window,center =True, normalized=False,onesided=True,length=int(length)*hp.audio.shift)
             else :
                 raise TypeError('Unknown mask type')
-
 
             audio_me_pe=audio_me_pe.to('cpu')
 
