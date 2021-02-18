@@ -1,5 +1,3 @@
-gpu: 'cuda:0'
----
 model :
   FC :
     block : 3

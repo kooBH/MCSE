@@ -24,12 +24,13 @@ if __name__ == '__main__':
                         help="version of current training")
     parser.add_argument('--chkpt',type=str,required=False,default=None)
     parser.add_argument('--step','-s',type=int,required=False,default=0)
+    parser.add_argument('--device','-d',type=int,required=False,default=0)
     args = parser.parse_args()
 
     hp = HParam(args.config)
     print("NOTE::Loading configuration : "+args.config)
 
-    device = hp.gpu
+    device = args.device
     torch.cuda.set_device(device)
 
     batch_size = hp.train.batch_size
