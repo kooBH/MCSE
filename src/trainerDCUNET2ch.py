@@ -52,8 +52,8 @@ if __name__ == '__main__':
     list_train= ['tr05_bus_simu','tr05_caf_simu','tr05_ped_simu','tr05_str_simu']
     list_test= ['dt05_bus_simu','dt05_caf_simu','dt05_ped_simu','dt05_str_simu','et05_bus_simu','et05_caf_simu','et05_ped_simu','et05_str_simu']
 
-    train_dataset = DatasetDCUNET(hp.data.root+'/STFT_R',hp.data.root+'/WAV',list_train,'*.npy',num_frame=num_frame)
-    val_dataset   = DatasetDCUNET(hp.data.root+'/STFT_R',hp.data.root+'/WAV',list_test,'*.npy',num_frame=num_frame)
+    train_dataset = DatasetDCUNET(hp.data.root+'/STFT_R',hp.data.root+'/WAV',list_train,'*.npy',num_frame=num_frame,channels = 2)
+    val_dataset   = DatasetDCUNET(hp.data.root+'/STFT_R',hp.data.root+'/WAV',list_test,'*.npy',num_frame=num_frame, channels = 2)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
     val_loader = torch.utils.data.DataLoader(dataset=val_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers)

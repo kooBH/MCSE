@@ -5,4 +5,4 @@
 
 ## 2021-02-09
 TARGET=DCUNET_t4
-python ./src/trainerDCUNET2ch.py -c ./config/${TARGET}.yaml -v ${TARGET}_2ch
+python ./src/trainerDCUNET2ch.py -c ./config/${TARGET}.yaml -v ${TARGET}_2ch -d 0

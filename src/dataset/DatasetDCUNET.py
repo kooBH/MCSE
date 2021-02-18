@@ -4,10 +4,11 @@ import librosa
 import numpy as np
 
 class DatasetDCUNET(torch.utils.data.Dataset):
-    def __init__(self, stft_root,wav_root,target, form,num_frame=80):
+    def __init__(self, stft_root,wav_root,target, form,num_frame=80, channels = 3):
         self.stft_root = stft_root
         self.wav_root = wav_root
         self.num_frame = num_frame
+        self.channels = channels
 
         if type(target) == str : 
             self.data_list = [x for x in glob.glob(os.path.join(stft_root+'/noisy/', target, form), recursive=False) if not os.path.isdir(x)]
@@ -81,10 +82,12 @@ class DatasetDCUNET(torch.utils.data.Dataset):
         loss : weighted SDR loss in time domian
         label : clean wav, noisy wav
         """
-
-        data = {"input":torch.stack((torch_noisy,torch_estim,torch_noise),0), "clean":torch_wav_clean,"noisy":torch_wav_noisy}
-
-        return data
+        if self.channels == 3 :
+            data = {"input":torch.stack((torch_noisy,torch_estim,torch_noise),0), "clean":torch_wav_clean,"noisy":torch_wav_noisy}
+            return data
+        elif self.channels == 2:
+            data = {"input":torch.stack((torch_noisy,torch_estim),0), "clean":torch_wav_clean,"noisy":torch_wav_noisy}
+            return data
 
     def __len__(self):
         return len(self.data_list)

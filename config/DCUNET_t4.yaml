@@ -8,9 +8,9 @@ model :
     input : 'noisy'
 ---
 train:
-  epoch: 50
+  epoch: 300
   # 12
-  batch_size: 6
+  batch_size: 12
   # 16
   num_workers: 16
   optimizer: 'adam'
