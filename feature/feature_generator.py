@@ -21,8 +21,8 @@ window = torch.hann_window(window_length=fft_size,periodic=True, dtype=None,
                            layout=torch.strided, device=None, requires_grad=False)
 
 noisy_root = '/home/data/kbh/isolated/'
-noise_mask_root = '/home/data/kbh/CHiME4_CGMM_RLS/trial_04_mask/'
-estimated_root = '/home/data/kbh/CHiME4_CGMM_RLS/trial_04/'
+noise_mask_root = '/home/data/kbh/trial_04_mask/winL1024_gamma0.99_Ln5_MVDRon0/mask/'
+estimated_root = '/home/data/kbh/trial_04_mask/winL1024_gamma0.99_Ln5_MVDRon0/'
 clean_root = '/home/data/kbh/isolated_ext/'
 real_root = '/home/data/kbh/isolated_1ch_track/'
 
@@ -198,6 +198,8 @@ if __name__=='__main__' :
                 os.makedirs(os.path.join(output_root,'WAV' ,i,j),exist_ok=True)
  
     cpu_num = cpu_count()
+    # save 8 threads for others
+    cpu_num = cpu_num - 8
     
     arr = list(range(len(clean_list)))
     with Pool(cpu_num) as p:

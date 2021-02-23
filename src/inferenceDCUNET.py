@@ -10,25 +10,26 @@ from tqdm import tqdm
 from utils.hparams import HParam
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-c','--config',type=str,required=True)
     parser.add_argument('-m','--model',type=str,default='./model_ckpt/bestmodel.pth')
     parser.add_argument('-o','--output_dir',type=str,required=True)
     parser.add_argument('-t','--type',type=str,default='respective')
+    parser.add_argument('-d','--device',type=str,default='cuda:0')
     args = parser.parse_args()
 
     ## Parameters 
     hp = HParam(args.config)
     print('NOTE::Loading configuration :: ' + args.config)
 
-    device = hp.gpu
+    device = args.device
     torch.cuda.set_device(device)
 
     num_epochs = 1
     batch_size = 1
     test_model = args.model
     win_len = hp.audio.frame
+    post_filter = hp.model.DCUNET.post_filter
 
     window=torch.hann_window(window_length=int(win_len), periodic=True, dtype=None, layout=torch.strided, device=None, requires_grad=False).to(device)
  
@@ -102,4 +103,3 @@ if __name__ == '__main__':
 
             ## Save
             torchaudio.save(output_dir+'/'+str(data_dir[0])+'/'+str(data_name[0])+'.wav',src=audio_me_pe[:,:],sample_rate=hp.audio.samplerate)
-

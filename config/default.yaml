@@ -6,6 +6,10 @@ model :
     num_frame : 80
     # input : 'noisy', 'estim'
     input : 'noisy'
+    post_filter : false
+    # channels : 2, 3
+    channels : 2
+    version : 1
 ---
 train:
   epoch: 50

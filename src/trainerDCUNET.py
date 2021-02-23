@@ -7,6 +7,7 @@ import numpy as np
 from tensorboardX import SummaryWriter
 
 from model.ModelDCUNET import ModelDCUNET
+from model.ModelDCUNET2 import ModelDCUNET2
 from dataset.DatasetDCUNET import DatasetDCUNET
 
 from utils.hparams import HParam
@@ -21,7 +22,7 @@ if __name__ == '__main__':
                         help="version of current training")
     parser.add_argument('--chkpt',type=str,required=False,default=None)
     parser.add_argument('--step','-s',type=int,required=False,default=0)
-    parser.add_argument('--device','-d',type=int,required=False,default=0)
+    parser.add_argument('--device','-d',type=str,required=False,default='cuda:0')
     args = parser.parse_args()
 
     hp = HParam(args.config)
@@ -34,6 +35,8 @@ if __name__ == '__main__':
     num_frame = hp.model.DCUNET.num_frame
     num_epochs = hp.train.epoch
     num_workers = hp.train.num_workers
+    version = hp.model.DCUNET.version
+    channels = hp.model.DCUNET.channels
 
     window = torch.hann_window(window_length=hp.audio.frame, periodic=True,
                                dtype=None, layout=torch.strided, device=None,
@@ -58,7 +61,14 @@ if __name__ == '__main__':
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
     val_loader = torch.utils.data.DataLoader(dataset=val_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers)
 
-    model = ModelDCUNET(input_channels=3).to(device)
+    model = None
+    if version == 1 :
+        model = ModelDCUNET(input_channels=channles).to(device)
+    elif version == 2 :
+        model = ModelDCUNET2(input_channels=channels).to(device)
+    else :
+        raise ValueError("Unsupported version of Model")
+    
     if not args.chkpt == None : 
         print('NOTE::Loading pre-trained model : '+ args.chkpt)
         model.load_state_dict(torch.load(args.chkpt, map_location=device))
@@ -93,6 +103,9 @@ if __name__ == '__main__':
             spec_input = batch_data["input"].to(device)
             wav_noisy= batch_data["noisy"].to(device)
             wav_clean= batch_data["clean"].to(device)
+
+            if channels == 2 :
+                spec_input = spec_input[:,:2,:,:,:]
             
             mask_r, mask_i = model(spec_input)
 
@@ -134,6 +147,9 @@ if __name__ == '__main__':
                 spec_input = batch_data["input"].to(device)
                 wav_noisy  = batch_data["noisy"].to(device)
                 wav_clean  = batch_data["clean"].to(device)
+
+                if channels == 2 :
+                    spec_input = spec_input[:,:2,:,:,:]
             
                 mask_r, mask_i = model(spec_input)
 

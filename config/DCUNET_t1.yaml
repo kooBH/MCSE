@@ -5,6 +5,8 @@ model :
     # input : 'noisy', 'estim'
     input : 'noisy'
     num_frame : 80
+    post_filter : false
+    version : 1
 ---
 train:
   epoch: 50
