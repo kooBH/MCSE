@@ -1,13 +1,13 @@
 model :
   DCUNET : 
     # num_frame must be multiple of 16
-    num_frame : 320
+    num_frame : 160
     # input : 'noisy', 'estim'
     input : 'noisy'
     post_filter: false
     # channels : 2, 3
-    channels : 2
-    version : 1
+    channels : 3
+    version : 2
 ---
 train:
   epoch: 200

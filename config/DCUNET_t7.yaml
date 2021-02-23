@@ -1,18 +1,18 @@
 model :
   DCUNET : 
     # num_frame must be multiple of 16
-    num_frame : 160
+    num_frame : 320
     # input : 'noisy', 'estim'
     input : 'noisy'
     post_filter: false
     # channels : 2, 3
     channels : 2
-    version : 2
+    version : 1
 ---
 train:
   epoch: 200
   # 12
-  batch_size: 12
+  batch_size: 6
   # 16
   num_workers: 16
   optimizer: 'adam'
