@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     model = None
     if version == 1 :
-        model = ModelDCUNET(input_channels=channles).to(device)
+        model = ModelDCUNET(input_channels=channels).to(device)
     elif version == 2 :
         model = ModelDCUNET2(input_channels=channels).to(device)
     else :
