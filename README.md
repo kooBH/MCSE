@@ -1,4 +1,5 @@
-# DNN based speech enhancement using preprocessed signal in STFT domain 
+# Multi-Channel Speech Enhancement
+channels : noisy, estimated speech, estimated noise.  
 Inspired by [DNN-Based Feature Enhancement Using DOA-Constrained ICA for Robust Speech Recognition](https://ieeexplore.ieee.org/document/7497454)  
 
 ## 2021-02
