@@ -2,45 +2,41 @@ import os, glob
 import torch
 import librosa
 import numpy as np
+import torch.nn.functional as F
 
 class DatasetDCUNET(torch.utils.data.Dataset):
-    def __init__(self, stft_root,wav_root,target, form,num_frame=80, channels = 3):
-        self.stft_root = stft_root
-        self.wav_root = wav_root
-        self.num_frame = num_frame
-        self.channels = channels
+    def __init__(self, root,SNRs, num_frame=80):
 
-        if type(target) == str : 
-            self.data_list = [x for x in glob.glob(os.path.join(stft_root+'/noisy/', target, form), recursive=False) if not os.path.isdir(x)]
-        elif type(target) == list : 
+        self.root = root
+        self.num_frame = num_frame
+        self.SNRs = SNRs
+
+        if type(SNRs) == str : 
+            self.data_list = [x for x in glob.glob(os.path.join(root,target, 'noisy','*.pt'), recursive=False)]
+        elif type(SNRs) == list : 
             self.data_list = []
-            for i in target : 
-                self.data_list = self.data_list + [x for x in glob.glob(os.path.join(stft_root+'/noisy/', i, form), recursive=False) if not os.path.isdir(x)]
+            for i in SNRs :  
+                self.data_list = self.data_list + [x for x in glob.glob(os.path.join(root, i,'noisy' ,'*.pt'), recursive=False)]
         else : 
             raise Exception('Unsupported type for target')
-
-        # Extract id only.
-        for i in range(len(self.data_list)) : 
-            tmp = self.data_list[i]
-            tmp = tmp.split('/')
-            self.data_list[i] = tmp[-2] + '/' + tmp[-1]
-            self.data_list[i] = (self.data_list[i].split('.'))[0]
 
     def __getitem__(self, index):
         path = self.data_list[index]
 #        print('['+str(index)+'] : ' + path)
+        file_name = path.split('/')[-1]
+        SNR = path.split('/')[-3]
 
-        npy_noisy = np.load(self.stft_root+'/'+'noisy'+'/'+self.data_list[index]+'.npy')
-        npy_noise = np.load(self.stft_root+'/'+'noise'+'/'+self.data_list[index]+'.npy')
-        npy_estim = np.load(self.stft_root+'/'+'estim'+'/'+self.data_list[index]+'.npy')
+        root = self.root
 
-        npy_wav_clean,sr = librosa.load(self.wav_root+'/'+'clean'+'/'+self.data_list[index]+'.wav',sr=16000)
-        npy_wav_noisy,sr = librosa.load(self.wav_root+'/'+'noisy'+'/'+self.data_list[index]+'.wav',sr=16000)
+        noisy = torch.load(os.path.join(root,SNR,'noisy',)+'/'+file_name)
+        estim= torch.load(os.path.join(root,SNR,'estimated_speech',)+'/'+file_name)
+        noise = torch.load(os.path.join(root,SNR,'estimated_noise',)+'/'+file_name)
+        clean = torch.load(os.path.join(root,'clean',)+'/'+file_name)
 
-        ## sampling routine ##
+       ## sampling routine ##
 
         # [Freq, Time, complex] 
-        length = np.size(npy_noisy, 1)
+        length = noisy.shape[1]
         need = self.num_frame - length
 
         start = 0
@@ -50,44 +46,19 @@ class DatasetDCUNET(torch.utils.data.Dataset):
                 start = np.random.randint(low=0,high=-need)
             else :
                 start = 0
-
-            npy_noisy = npy_noisy[:,start:start+self.num_frame,:]
-            npy_noise = npy_noise[:,start:start+self.num_frame,:]
-            npy_estim = npy_estim[:,start:start+self.num_frame,:]
-
-            # [samples]
-            npy_wav_clean = npy_wav_clean[start*256:start*256 + self.num_frame*256]
-            npy_wav_noisy = npy_wav_noisy[start*256:start*256 + self.num_frame*256]
+            noisy = noisy[:,start:start+self.num_frame,:]
+            noise = noise[:,start:start+self.num_frame,:]
+            estim = estim[:,start:start+self.num_frame,:]
+            clean = clean[:,start:start+self.num_frame,:]
         # zero-padding
         elif need > 0 :
-            npy_noisy =  np.pad(npy_noisy,((0,0),(0,need),(0,0)),'constant',constant_values=0)
-            npy_noise =  np.pad(npy_noise,((0,0),(0,need),(0,0)),'constant',constant_values=0)
-            npy_estim =  np.pad(npy_estim,((0,0),(0,need),(0,0)),'constant',constant_values=0)
+            noisy =  F.pad(noisy,((0,0),(0,need),(0,0)),'constant',value=0)
+            noise =  F.pad(noise,((0,0),(0,need),(0,0)),'constant',value=0)
+            estim =  F.pad(estim,((0,0),(0,need),(0,0)),'constant',value=0)
+            clean =  F.pad(clean,((0,0),(0,need),(0,0)),'constant',value=0)
             
-            npy_wav_clean = npy_wav_clean[:length*256]
-            npy_wav_noisy = npy_wav_noisy[:length*256]
-
-            npy_wav_clean = np.pad(npy_wav_clean,(0,need*256),'constant',constant_values=0)
-            npy_wav_noisy = np.pad(npy_wav_noisy,(0,need*256),'constant',constant_values=0)
-
-        torch_noisy = torch.from_numpy(npy_noisy)
-        torch_noise = torch.from_numpy(npy_noise)
-        torch_estim = torch.from_numpy(npy_estim)
-
-        torch_wav_clean = torch.from_numpy(npy_wav_clean)
-        torch_wav_noisy = torch.from_numpy(npy_wav_noisy)
-
-        """
-        input : 3-channel (noisy,estim,clean)
-        loss : weighted SDR loss in time domian
-        label : clean wav, noisy wav
-        """
-        if self.channels == 3 :
-            data = {"input":torch.stack((torch_noisy,torch_estim,torch_noise),0), "clean":torch_wav_clean,"noisy":torch_wav_noisy}
-            return data
-        elif self.channels == 2:
-            data = {"input":torch.stack((torch_noisy,torch_estim),0), "clean":torch_wav_clean,"noisy":torch_wav_noisy}
-            return data
+        data = {"input":torch.stack((noisy,estim,noise),0), "clean":clean}
+        return data
 
     def __len__(self):
         return len(self.data_list)

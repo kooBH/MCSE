@@ -1,3 +1,3 @@
-[submodule "src/ptUtils"]
-	path = src/ptUtils
-	url = https://github.com/koobh/ptUtils
+[submodule "src/utils"]
+	path = src/utils
+	url = https://github.com/kooBH/ptUtils.git

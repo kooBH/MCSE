@@ -111,7 +111,7 @@ class Decoder(nn.Module):
 
 
 class ModelDCUNET(nn.Module):
-    def __init__(self, input_channels=1,
+    def __init__(self, input_channels=3,
                  complex=True,
                  model_complexity=45,
                  model_depth=20,
