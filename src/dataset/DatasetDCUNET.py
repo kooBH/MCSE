@@ -39,24 +39,39 @@ class DatasetDCUNET(torch.utils.data.Dataset):
         length = noisy.shape[1]
         need = self.num_frame - length
 
-        start = 0
+        start_idx = np.random.randint(low=0,high = length)
 
-        if need <= 0 :
-            if need != 0:
-                start = np.random.randint(low=0,high=-need)
-            else :
-                start = 0
-            noisy = noisy[:,start:start+self.num_frame,:]
-            noise = noise[:,start:start+self.num_frame,:]
-            estim = estim[:,start:start+self.num_frame,:]
-            clean = clean[:,start:start+self.num_frame,:]
-        # zero-padding
-        elif need > 0 :
-            noisy =  F.pad(noisy,((0,0),(0,need),(0,0)),'constant',value=0)
-            noise =  F.pad(noise,((0,0),(0,need),(0,0)),'constant',value=0)
-            estim =  F.pad(estim,((0,0),(0,need),(0,0)),'constant',value=0)
-            clean =  F.pad(clean,((0,0),(0,need),(0,0)),'constant',value=0)
-            
+        # padding on head 
+        if start_idx + self.num_frame > length :  
+            shortage = (start_idx + self.num_frame) - length
+            noisy = noisy[:,start_idx:,:]
+            noisy = F.pad(noisy,(0,0,shortage,0,0,0),'constant',value=0)
+            estim = estim[:,start_idx:,:]
+            estim = F.pad(estim,(0,0,shortage,0,0,0),'constant',value=0)
+            noise = noise[:,start_idx:,:]
+            noise = F.pad(noise,(0,0,shortage,0,0,0),'constant',value=0)
+            clean = clean[:,start_idx:,:]
+            clean = F.pad(clean,(0,0,shortage,0,0,0),'constant',value=0)
+            #print(str(1) +  ' ' + str(start_idx)+ '| '+str(length) + '|'+str(shortage) + '|' + str(noisy.shape))
+        # padding on tail
+        elif start_idx >= length - self.num_frame : 
+            shortage = start_idx - length + self.num_frame 
+            noisy =  noisy[:,start_idx:,]
+            noisy = F.pad(noisy,(0,0,0,shortage,0,0),'constant',value=0)
+            estim =  estim[:,start_idx:,]
+            estim = F.pad(estim,(0,0,0,shortage,0,0),'constant',value=0)
+            noise =  noise[:,start_idx:,]
+            noise = F.pad(noise,(0,0,0,shortage,0,0),'constant',value=0)
+            clean =  clean[:,start_idx:,]
+            clean = F.pad(clean,(0,0,0,shortage,0,0),'constant',value=0)
+            #print(str(2) +  ' ' + str(start_idx)+ '| '+str(length) + '|'+str(shortage) + '|' + str(noisy.shape))
+        else :
+            noisy =  noisy[:,start_idx:start_idx+self.num_frame,:]
+            estim =  estim[:,start_idx:start_idx+self.num_frame,:]
+            noise =  noise[:,start_idx:start_idx+self.num_frame,:]
+            clean =  clean[:,start_idx:start_idx+self.num_frame,:]
+            #print(str(3) +  ' ' + str(start_idx)+ '| '+str(length)+'|'+str(noisy.shape))
+           
         data = {"input":torch.stack((noisy,estim,noise),0), "clean":clean}
         return data
 

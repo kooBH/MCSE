@@ -6,13 +6,12 @@ import numpy as np
 
 from tensorboardX import SummaryWriter
 
-from model.ModelDCUNET import ModelDCUNET
+from model.DCUNET import DCUNET
 from dataset.DatasetDCUNET import DatasetDCUNET
 from dataset.TestsetDCUNET import TestsetDCUNET
 
 from utils.hparams import HParam
-from utils.SISDR import SDRLoss
-from utils.SISDR import mSDRLoss
+from utils.SISDR import SDR
 from utils.writer import MyWriter
 
 if __name__ == '__main__':
@@ -66,16 +65,17 @@ if __name__ == '__main__':
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
     val_loader = torch.utils.data.DataLoader(dataset=val_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers)
 
-    model = ModelDCUNET().to(device)
+    model = DCUNET().to(device)
+    loss_class = SDR(device)
     
     if not args.chkpt == None : 
         print('NOTE::Loading pre-trained model : '+ args.chkpt)
         model.load_state_dict(torch.load(args.chkpt, map_location=device))
 
     if hp.loss.type == 'SDR' : 
-        criterion = SDRLoss
+        criterion = loss_class.SDRLoss
     elif hp.loss.type == 'mSDR': 
-        criterion = mSDRLoss
+        criterion = loss_class.mSDRLoss
     else : 
         raise Exception('Unknown loss function')
     optimizer = torch.optim.Adam(model.parameters(), lr=hp.train.adam)
