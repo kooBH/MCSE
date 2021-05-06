@@ -72,10 +72,10 @@ if __name__ == '__main__':
         print('NOTE::Loading pre-trained model : '+ args.chkpt)
         model.load_state_dict(torch.load(args.chkpt, map_location=device))
 
-    if hp.loss.type == 'SDR' : 
-        criterion = loss_class.SDRLoss
-    elif hp.loss.type == 'mSDR': 
+    if hp.loss.type == 'mSDR': 
         criterion = loss_class.mSDRLoss
+    elif hp.loss.type == 'iSDR':
+        criterion = loss_class.iSDRLoss
     else : 
         raise Exception('Unknown loss function')
     optimizer = torch.optim.Adam(model.parameters(), lr=hp.train.adam)
@@ -156,6 +156,11 @@ if __name__ == '__main__':
             scheduler.step(val_loss)
 
             writer.log_value(loss,step,'test loss')
+
+            # TODO
+            writer.log_spec(input[0][0],'noisy',step)
+            writer.log_spec(input[0][1],'estim',step)
+            writer.log_spec(enhance_spec[0][1],'estim',step)
 
             if best_loss > val_loss:
                 torch.save(model.state_dict(), str(modelsave_path)+'/bestmodel.pt')

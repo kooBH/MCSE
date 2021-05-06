@@ -4,7 +4,7 @@ import numpy as np
 import torchaudio
 import os
 
-from model.ModelDCUNET import ModelDCUNET
+from model.DCUNET import DCUNET
 from dataset.TestsetDCUNET import TestsetDCUNET
 from tqdm import tqdm
 from utils.hparams import HParam
@@ -41,11 +41,11 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(output_dir,i),exist_ok=True)
 
     ## Dataset
-    test_dataset = TestsetDCUNET(hp.data.root+'/STFT_R',list_test,'*.npy',num_frame=hp.model.DCUNET.num_frame)
+    test_dataset = TestsetDCUNET(hp.data.test_root+'/STFT_R',list_test,'*.npy',num_frame=hp.model.DCUNET.num_frame)
     test_loader = torch.utils.data.DataLoader(dataset=test_dataset,batch_size=1,shuffle=False,num_workers=1)
 
     ## Model
-    model = ModelDCUNET(input_channels=3).to(device)
+    model = DCUNET(input_channels=3).to(device)
     model.load_state_dict(torch.load(test_model,map_location=device))
     model.eval()
     print('NOTE::Loading pre-trained model : ' + test_model)
