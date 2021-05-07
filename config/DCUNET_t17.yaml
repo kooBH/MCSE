@@ -26,7 +26,7 @@ train:
   checkpoint_interval: 1000
 ---
 loss:
-  type: 'mSDR' # SDR, mSDR, iSDR
+  type: 'iSDR' # SDR, mSDR
   wSDR:
     alpha: 0.99
 ---
@@ -46,7 +46,7 @@ audio:
   samplerate : 16000
 ---
 data:
-  SNR :  ['SNR-7','SNR-5','SNR0','SNR5','SNR7','SNR10']
+  SNR :  [SNR-5','SNR0','SNR5']
   root: '/home/data/kbh/MCSE/CGMM_RLS_MPDR/'
   test_root: '/home/data/kbh/3-channel-dnn/'
 ---

@@ -26,6 +26,10 @@
 #python src/inferenceDCUNET.py  -c config/${TARGET}.yaml -m /home/nas/user/kbh/3-channel-dnn/chkpt/${TARGET}/bestmodel.pt -o /home/nas/user/kbh/3-channel-dnn/output/${TARGET}${APPEND} -d cuda:0
 
 
-TARGET=DCUNET_t4
-APPEND=_2ch
-python src/inferenceDCUNET.py  -c config/${TARGET}.yaml -m /home/nas/user/kbh/3-channel-dnn/chkpt/${TARGET}/bestmodel.pt -o /home/nas/user/kbh/3-channel-dnn/output/${TARGET}${APPEND} -d cuda:0
+#TARGET=DCUNET_t4
+#APPEND=_2ch
+#python src/inferenceDCUNET.py  -c config/${TARGET}.yaml -m /home/nas/user/kbh/3-channel-dnn/chkpt/${TARGET}/bestmodel.pt -o /home/nas/user/kbh/3-channel-dnn/output/${TARGET}${APPEND} -d cuda:0
+
+## 2021-05-06
+TARGET=DCUNET_t15
+python src/inferenceDCUNET.py  -c config/${TARGET}.yaml -m /home/nas/user/kbh/MCSE/chkpt/${TARGET}/bestmodel.pt -o /home/nas/user/kbh/MCSE/output/${TARGET}${APPEND} -d cuda:0

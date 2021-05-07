@@ -50,17 +50,11 @@ if __name__ == '__main__':
 
     writer = MyWriter(hp, log_dir)
 
-    SNR_train= ['SNR-7','SNR-5','SNR0','SNR5','SNR7','SNR10']
+    SNR_train= hp.data.SNR
     #SNR_train= ['SNR0']
 
-    raw_dataset = DatasetDCUNET(hp.data.root,SNR_train,num_frame=num_frame)
-    len_dataset = len(raw_dataset)
-
-    # 99 : 1 = train : test
-    len_trainset = int(len_dataset * 0.99)
-    len_testset = len_dataset - len_trainset
-
-    train_dataset, val_dataset = torch.utils.data.random_split(raw_dataset,[len_trainset,len_testset],generator=torch.Generator().manual_seed(42))
+    train_dataset = DatasetDCUNET(hp.data.root+'train',SNR_train,num_frame=num_frame)
+    val_dataset = DatasetDCUNET(hp.data.root+'test',SNR_train,num_frame=num_frame)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
     val_loader = torch.utils.data.DataLoader(dataset=val_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers)
@@ -160,9 +154,8 @@ if __name__ == '__main__':
             # TODO
             writer.log_spec(input[0][0],'noisy',step)
             writer.log_spec(input[0][1],'estim',step)
-            writer.log_spec(enhance_spec[0][1],'estim',step)
+            writer.log_spec(enhance_spec[0],'estim',step)
 
             if best_loss > val_loss:
                 torch.save(model.state_dict(), str(modelsave_path)+'/bestmodel.pt')
                 best_loss = val_loss
-
