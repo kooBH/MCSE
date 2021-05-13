@@ -102,4 +102,4 @@ if __name__ == '__main__':
             audio_me_pe = audio_me_pe/max_val
 
             ## Save
-            torchaudio.save(output_dir+'/'+str(data_dir[0])+'/'+str(data_name[0])+'.wav',src=audio_me_pe[:,:],sample_rate=hp.audio.samplerate)
+            torchaudio.save(output_dir+'/'+str(data_dir[0])+'/'+str(data_name[0])+'.wav',src=audio_me_pe[:,:],sample_rate=hp.audio.samplerate,bits_per_sample=16)
