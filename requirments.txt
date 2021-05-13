@@ -1,11 +1,9 @@
-torch==1.7
-torchaudio
+torch==1.8.0
+torchaudio==0.8.0
 pyyaml
 librosa==0.8
 numpy
-pandas
 tensorboard
 tensorboardx
 matplotlib
-
 tqdm
