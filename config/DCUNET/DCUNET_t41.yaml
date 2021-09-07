@@ -1,0 +1,66 @@
+model :
+  DCUNET : 
+    # num_frame must be multiple of 16
+    num_frame : 80
+    # input : 'noisy', 'estim'
+    input : 'noisy'
+    post_filter: false
+    # channels : 2, 3
+    channels : 3
+    version : 1
+    dropout : 0.2
+    complex: true
+---
+train:
+  epoch: 3
+  # 12
+  batch_size: 12
+  # 16
+  num_workers: 16
+  optimizer: 'adam'
+  adam: 0.0001
+  adabound:
+    initial: 0.001
+    final: 0.05
+  frame_num: 1024
+  summary_interval: 10
+  validation_interval: 100
+  checkpoint_interval: 1000
+---
+loss:
+  type: 'mwMSE' # SDR, mSDR, mwMSE
+  wSDR:
+    alpha: 0.99
+  wMSE :
+    alpha : 1.0
+  mwMSE :
+    alpha: 0.7
+    norm : 'none' # none, norm_max_batch, norm_max_freq
+    dB   : false
+  mwMSE_iSDR:
+    beta : 0.5
+---
+scheduler: # Plateau, oneCycle, None
+  type: 'Plateau'
+  oneCycle:
+    max_lr: 0.01
+  Plateau:
+    mode: 'min'
+    patience: 2
+    factor: 0.5
+    min_lr: 0.000005
+---
+audio:
+  frame : 1024
+  shift : 256
+  n_mels: 40
+  samplerate : 16000
+---
+data:
+  SNR :  ['SNR-7','SNR-5','SNR0','SNR5','SNR7','SNR10']
+  #root: '/home/data/kbh/MCSE/AuxIVA_DC_SVE/'
+  root: '/home/data/kbh/MCSE/CGMM_RLS_MPDR/'
+  test_root: '/home/data/kbh/3-channel-dnn/'
+---
+  log:
+    root: '/home/nas/user/kbh/MCSE/'
