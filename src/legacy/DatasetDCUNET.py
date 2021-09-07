@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 class DatasetDCUNET(torch.utils.data.Dataset):
     def __init__(self, root,SNRs, num_frame=80):
+
         self.root = root
         self.num_frame = num_frame
         self.SNRs = SNRs

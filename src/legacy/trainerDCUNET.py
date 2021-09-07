@@ -8,6 +8,7 @@ import librosa
 from tensorboardX import SummaryWriter
 
 from model.DCUNET import DCUNET
+from model.MDCUNET import MDCUNET
 from dataset.DatasetDCUNET import DatasetDCUNET
 from dataset.TestsetDCUNET import TestsetDCUNET
 
@@ -61,8 +62,13 @@ if __name__ == '__main__':
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
     val_loader = torch.utils.data.DataLoader(dataset=val_dataset,batch_size=batch_size,shuffle=False,num_workers=num_workers)
 
-    print("model : DCUNET")
-    model = DCUNET(dropout = hp.model.DCUNET.dropout,complex=hp.model.DCUNET.complex).to(device)
+    if hp.model == 'MDCUNET' :
+        print("model : MDCUNET")
+        model = MDCUNET(dropout = hp.model.DCUNET.dropout,complex=hp.model.DCUNET.complex).to(device)
+    
+    else : 
+        print("model : DCUNET")
+        model = DCUNET(dropout = hp.model.DCUNET.dropout,complex=hp.model.DCUNET.complex).to(device)
     loss= LossBundle(hp,device)
     
     if not args.chkpt == None : 

@@ -17,7 +17,6 @@ class ComplexConv2d(nn.Module):
         output = torch.stack((real, imaginary), dim=-1)
         return output
 
-
 class ComplexConvTranspose2d(nn.Module):
     def __init__(self, in_channel, out_channel, kernel_size, stride=1, padding=0, output_padding=0, dilation=1, groups=1, bias=True, **kwargs):
         super().__init__()
@@ -48,7 +47,6 @@ class ComplexConvTranspose2d(nn.Module):
         output = torch.stack((real, imaginary), dim=-1)
         return output
 
-
 class ComplexBatchNorm2d(nn.Module):
     def __init__(self, num_features, eps=1e-5, momentum=0.1, affine=True,
                  track_running_stats=True, **kwargs):
@@ -61,9 +59,6 @@ class ComplexBatchNorm2d(nn.Module):
         imag = self.bn_im(x[..., 1])
         output = torch.stack((real, imag), dim=-1)
         return output
-
-
-
 
 class Encoder(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding=None, complex=False, padding_mode="zeros"):
@@ -87,7 +82,6 @@ class Encoder(nn.Module):
         x = self.bn(x)
         x = self.relu(x)
         return x
-
 
 class Decoder(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, output_padding,padding=(0, 0), complex=False):
@@ -115,15 +109,22 @@ class DCUNET(nn.Module):
                  complex=True,
                  model_complexity=45,
                  model_depth=20,
-                 padding_mode="zeros"):
+                 padding_mode="zeros",
+                 dropout=0.0):
         super().__init__()
 
-        if complex:
+        #if complex:
+        #    model_complexity = int(model_complexity // 1.414)
+
+        if not complex:
+            input_channels *=2
+        else  :
             model_complexity = int(model_complexity // 1.414)
 
         self.set_size(model_complexity=model_complexity, input_channels=input_channels, model_depth=model_depth)
         self.encoders = []
         self.model_length = model_depth // 2
+        self.dropout = dropout
 
         for i in range(self.model_length):
             module = Encoder(self.enc_channels[i], self.enc_channels[i + 1], kernel_size=self.enc_kernel_sizes[i],
@@ -141,17 +142,21 @@ class DCUNET(nn.Module):
 
         if complex:
             conv = ComplexConv2d
+            linear = conv(self.dec_channels[-1], 1, 1)
         else:
             conv = nn.Conv2d
+            linear = conv(self.dec_channels[-1], 2, 1)
 
-        linear = conv(self.dec_channels[-1], 1, 1)
 
         self.add_module("linear", linear)
         self.complex = complex
         self.padding_mode = padding_mode
 
+        self.dr = nn.Dropout(self.dropout)
+
         self.decoders = nn.ModuleList(self.decoders)
         self.encoders = nn.ModuleList(self.encoders)
+
 
     def forward(self, input):        
         # ipnut : [ Batch Channel Freq Time 2]
@@ -159,13 +164,17 @@ class DCUNET(nn.Module):
         if self.complex:
             x = input
         else:
-            raise Exception('Unsupported type for input')
+            #raise Exception('Unsupported type for input')
+            tmp = input.permute(0,1,4,2,3)
+            x = torch.reshape(tmp,(tmp.shape[0],tmp.shape[1]*tmp.shape[2],tmp.shape[3],tmp.shape[4]))
+            pass
 
         # Encoders
         x_skip = []
         for i, encoder in enumerate(self.encoders):
             x_skip.append(x)
             x = encoder(x)
+            x = self.dr(x)
            # print("x{}".format(i), x.shape)
         # x_skip : x0=input x1 ... x9
 
@@ -175,6 +184,7 @@ class DCUNET(nn.Module):
         # Decoders
         for i, decoder in enumerate(self.decoders):
             p = decoder(p)
+            p = self.dr(p)
             if i == self.model_length - 1:
                 break
             #print(f"p{i}, {p.shape} + x{self.model_length - 1 - i}, {x_skip[self.model_length - 1 -i].shape}, padding {self.dec_paddings[i]}")
@@ -187,7 +197,11 @@ class DCUNET(nn.Module):
         mask = torch.squeeze(mask,1)
         
         #return real_spec*mask[:,:,:,0], imag_spec*mask[:,:,:,1]
-        return mask[:,:,:,0], mask[:,:,:,1]
+
+        if self.complex :
+            return mask[:,:,:,0], mask[:,:,:,1]
+        else :
+            return torch.squeeze(mask[:,0,:,:]), torch.squeeze(mask[:,1,:,:])
 
     def set_size(self, model_complexity, model_depth=20, input_channels=1):
         if model_depth == 10:

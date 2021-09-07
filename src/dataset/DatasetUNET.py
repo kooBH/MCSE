@@ -4,19 +4,31 @@ import librosa
 import numpy as np
 import torch.nn.functional as F
 
-class DatasetDCUNET(torch.utils.data.Dataset):
-    def __init__(self, root,SNRs, num_frame=80):
-        self.root = root
-        self.num_frame = num_frame
-        self.SNRs = SNRs
-        self.target = root.split('/')[-1]
+class DatasetUNET(torch.utils.data.Dataset):
+    def __init__(self, hp,is_train=True):
+        self.hp = hp 
+        if is_train : 
+            self.root = os.path.join(hp.data.root,'train')
+        else :
+            self.root = os.path.join(hp.data.root,'test')
 
-        if type(SNRs) == str : 
+        print('root : ' + self.root)
+
+        self.num_frame = hp.model.UNET.num_frame
+        self.SNRs = hp.data.SNR
+        self.target = self.root.split('/')[-2]
+
+        if self.target in ['CGMM_RLS_MPDR','CGMM_RLS_MPDR_norm_2','AUX_DC_IVA'] : 
+            pass
+        else :
+            raise Exception('unsupported target ' + str(self.target) )
+
+        if type(self.SNRs) == str : 
             self.data_list = [x for x in glob.glob(os.path.join(root,SNRs, 'noisy','*.pt'), recursive=False)]
-        elif type(SNRs) == list : 
+        elif type(self.SNRs) == list : 
             self.data_list = []
-            for i in SNRs :  
-                self.data_list = self.data_list + [x for x in glob.glob(os.path.join(root, i,'noisy' ,'*.pt'), recursive=False)]
+            for i in self.SNRs :  
+                self.data_list = self.data_list + [x for x in glob.glob(os.path.join(self.root, i,'noisy' ,'*.pt'), recursive=False)]
         else : 
             raise Exception('Unsupported type for target')
 
@@ -74,7 +86,22 @@ class DatasetDCUNET(torch.utils.data.Dataset):
             noise =  noise[:,start_idx:start_idx+self.num_frame,:]
             clean =  clean[:,start_idx:start_idx+self.num_frame,:]
             #print(str(3) +  ' ' + str(start_idx)+ '| '+str(length)+'|'+str(noisy.shape))
-        data = {"input":torch.stack((noisy,estim,noise),0), "clean":clean}
+
+        phase = None
+        if self.hp.model.UNET.input == 'noisy' : 
+            phase_input = torch.angle(noisy[:,:,0] + noisy[:,:,1]*1j)
+            phase_clean = torch.angle(clean[:,:,0] + clean[:,:,1]*1j)
+        # estim
+        else :
+            phase_input = torch.angle(estim[:,:,0] + estim[:,:,1]*1j)
+            phase_clean = torch.angle(clean[:,:,0] + clean[:,:,1]*1j)
+
+        noisy = torch.sqrt(noisy[:,:,0]**2 + noisy[:,:,1]**2)
+        estim = torch.sqrt(estim[:,:,0]**2 + estim[:,:,1]**2)
+        noise = torch.sqrt(noise[:,:,0]**2 + noise[:,:,1]**2)
+        clean = torch.sqrt(clean[:,:,0]**2 + clean[:,:,1]**2)
+
+        data = {"input":torch.stack((noisy,estim,noise),0), "clean":clean,'phase':torch.stack((phase_input,phase_clean),0)}
         return data
 
     def __len__(self):
