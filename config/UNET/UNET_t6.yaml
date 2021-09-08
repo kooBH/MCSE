@@ -4,11 +4,11 @@ model :
     # num_frame must be multiple of 16
     num_frame : 80
     # input : 'noisy', 'estim'
-    input : 'estim'
-    channels : 1
+    input : 'noisy'
+    channels : 3
     version : 1
     dropout : 0.0
-    activation : 'Sigmoid' # Sigmoid, LeakyReLU, none
+    activate : 'LeakReLU' # Sigmoid, LeakyReLU
   DCUNET : 
     # num_frame must be multiple of 16
     num_frame : 80
@@ -24,7 +24,7 @@ model :
 train:
   epoch: 30
   # 12
-  batch_size: 40
+  batch_size: 80
   # 16
   num_workers: 8
   frame_num: 1024

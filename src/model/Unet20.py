@@ -5,6 +5,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+## Module which does nothing 
+class passing(nn.Module) : 
+    def __init__(self):
+        super().__init__()
+        
+    def forward(self,x):
+        return x
+
 class Encoder(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding=None, padding_mode="zeros",dropout=0):
         super().__init__()
@@ -44,12 +52,18 @@ class Decoder(nn.Module):
         return x
 
 class Unet20(nn.Module):
-    def __init__(self, input_channels=1,
+    def __init__(self, hp,
                  model_complexity=45,
                  model_depth=20,
                  padding_mode="zeros",
-                 dropout='none'):
+                 ):
         super().__init__()
+
+        self.hp = hp
+        input_channels = hp.model.UNET.channels
+        dropout = hp.model.UNET.dropout
+        activation = hp.model.UNET.activation
+
        
         model_complexity = int(model_complexity // 1.414)
 
@@ -173,7 +187,14 @@ class Unet20(nn.Module):
 
         
         linear = nn.Conv2d(self.dec_channels[-1], 1, 1)
-        self.acti = nn.Sigmoid()
+        if activation == 'Sigmoid' : 
+            self.acti = nn.Sigmoid()
+        elif activation == 'LeakyReLU' : 
+            self.acti = nn.LeakyReLU()
+        elif activation == 'none':
+            self.acti = passing()
+        else :
+            raise Exception('ERROR:Unknown activation : ' + str(activation))
 
         self.add_module("linear", linear)
         self.padding_mode = padding_mode

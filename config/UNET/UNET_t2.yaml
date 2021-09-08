@@ -8,6 +8,7 @@ model :
     channels : 2
     version : 1
     dropout : 0.0
+    activation : 'Sigmoid' # Sigmoid, LeakyReLU, none
   DCUNET : 
     # num_frame must be multiple of 16
     num_frame : 80

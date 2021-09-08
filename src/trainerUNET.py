@@ -154,7 +154,7 @@ if __name__ == '__main__':
     # Set Model
     if hp.model.UNET.type == 'Unet20' : 
         print("model : Unet20")
-        model = Unet20(input_channels = hp.model.UNET.channels).to(device)
+        model = Unet20(hp).to(device)
     elif hp.model.UNET.type == 'TRU':
         print("model : UNET Tiny Recurrent Unet")
         model = UNET().to(device)
