@@ -4,6 +4,25 @@ import librosa
 import numpy as np
 import torch.nn.functional as F
 
+def biquad_filter(x,r=None):
+    if r is None:
+        r = (np.random.rand(4)-0.5)*(3/8)
+
+    y = torch.zeros(x.shape)
+    
+    n_fft = x.shape[0]
+    length = x.shape[1]
+    
+    y = torch.zeros((n_fft,length,2),dtype=torch.complex64)
+     
+    y[0] = x[0]
+    y[1] = x[1] + r[0]*x[0] - r[2]*y[0]
+    y[:,:,1] = x[:,:,1]
+    
+    for i in range(2,length):
+        y[:,i,0] = x[:,i,0] + r[0]*x[:,i-1,0] + r[1]*x[:,i-2,0] - r[2]*y[:,i-1,0] - r[3]*y[:,i-2,0]
+
+
 class DatasetUNET(torch.utils.data.Dataset):
     def __init__(self, hp,is_train=True):
         self.hp = hp 
@@ -87,6 +106,17 @@ class DatasetUNET(torch.utils.data.Dataset):
             clean =  clean[:,start_idx:start_idx+self.num_frame,:]
             #print(str(3) +  ' ' + str(start_idx)+ '| '+str(length)+'|'+str(noisy.shape))
 
+
+        if self.hp.augment.type == 'biquad':
+            r = (np.random.rand(4)-0.5)*(3/8)
+            noisy = biquad_filter(noisy,r)
+            estim = biquad_filter(estim,r)
+            noise = biquad_filter(noise,r)
+        elif self.hp.augment.type == 'none' : 
+            pass
+        else :
+            raise Exception('Unknown augmentation method : ' + str(self.hp.augment.type))
+
         phase = None
         if self.hp.model.UNET.input == 'noisy' : 
             phase_input = torch.angle(noisy[:,:,0] + noisy[:,:,1]*1j)
@@ -101,7 +131,12 @@ class DatasetUNET(torch.utils.data.Dataset):
         noise = torch.sqrt(noise[:,:,0]**2 + noise[:,:,1]**2)
         clean = torch.sqrt(clean[:,:,0]**2 + clean[:,:,1]**2)
 
-        data = {"input":torch.stack((noisy,estim,noise),0), "clean":clean,'phase':torch.stack((phase_input,phase_clean),0)}
+        if self.hp.model.UNET.input == 'noisy' : 
+            input = torch.stack((noisy,estim,noise),0)
+        else :
+            input = torch.stack((estim,noisy,noise),0)
+
+        data = {"input":input, "clean":clean,'phase':torch.stack((phase_input,phase_clean),0)}
         return data
 
     def __len__(self):

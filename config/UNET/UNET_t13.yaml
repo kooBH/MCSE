@@ -5,21 +5,20 @@ model :
     num_frame : 80
     # input : 'noisy', 'estim'
     input : 'noisy'
-    method : 'masking' # masking, mapping
-    channels : 1
+    channels : 3
     version : 1
-    dropout : 0.0 # 
-    activation : 'LeakyReLU' # LeakyReLU, SiLU, Softplus, PReLU
-    mask_activation : 'Sigmoid' # Sigmoid, ReLU, Softplus,none
+    dropout : 0.2
+    activation : 'LeakyReLU' # LeakyReLU, SiLU
+    mask_activation : 'ReLU' # Sigmoid, ReLU, none
 ---
 augment:
-  type : 'spec'
+  type : 'none'
   spec:
 ---
 train:
-  epoch: 10
+  epoch: 30
   # 12
-  batch_size: 12
+  batch_size: 40
   # 16
   num_workers: 8
   frame_num: 1024
@@ -41,7 +40,7 @@ optimizer :
     amsgrad : true
 ---
 loss:
-  type: 'mSDR' # SDR, mSDR, mwMSE, mwMSE_iSDR
+  type: 'mwMSE' # SDR, mSDR, mwMSE, mwMSE_iSDR
   iSDR:
   wSDR:
     alpha: 0.99
@@ -54,7 +53,7 @@ loss:
   mwMSE_iSDR:
     beta : 0.5
 ---
-scheduler: # Plateau, oneCycle, CyclicLR, None
+scheduler: # Plateau, oneCycle, None
   type: 'Plateau'
   oneCycle:
     max_lr: 0.01

@@ -5,21 +5,19 @@ model :
     num_frame : 80
     # input : 'noisy', 'estim'
     input : 'noisy'
-    method : 'masking' # masking, mapping
-    channels : 1
+    channels : 3
     version : 1
-    dropout : 0.0 # 
-    activation : 'LeakyReLU' # LeakyReLU, SiLU, Softplus, PReLU
-    mask_activation : 'Sigmoid' # Sigmoid, ReLU, Softplus,none
+    dropout : 0.0
+    activation : 'LeakyReLU' # LeakyReLU, SiLU
+    mask_activation : 'Softplus' # Sigmoid, ReLu,Softplus, none,
 ---
 augment:
-  type : 'spec'
-  spec:
+  type: 'none'
 ---
 train:
-  epoch: 10
+  epoch: 30
   # 12
-  batch_size: 12
+  batch_size: 40
   # 16
   num_workers: 8
   frame_num: 1024
@@ -50,11 +48,11 @@ loss:
   mwMSE :
     alpha: 0.9
     norm : 'norm_max_batch' # none, norm_max_batch, norm_max_freq
-    scale:  'log+1' # log,log+1,dB,none
+    dB   : false
   mwMSE_iSDR:
     beta : 0.5
 ---
-scheduler: # Plateau, oneCycle, CyclicLR, None
+scheduler: # Plateau, oneCycle, None
   type: 'Plateau'
   oneCycle:
     max_lr: 0.01

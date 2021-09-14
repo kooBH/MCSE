@@ -4,27 +4,20 @@ model :
     # num_frame must be multiple of 16
     num_frame : 80
     # input : 'noisy', 'estim'
-    input : 'noisy'
+    input : 'estim'
     channels : 3
     version : 1
     dropout : 0.0
-    activate : 'LeakReLU' # Sigmoid, LeakyReLU
-  DCUNET : 
-    # num_frame must be multiple of 16
-    num_frame : 80
-    # input : 'noisy', 'estim'
-    input : 'noisy'
-    post_filter: false
-    # channels : 2, 3
-    channels : 3
-    version : 1
-    dropout : 0.2
-    complex: true
+    activation : 'LeakyReLU' # SiLU, LeakyReLU, none
+    mask_activation : 'Sigmoid' # Sigmoid, ReLU, none
+---
+augment:
+  type: 'none'
 ---
 train:
   epoch: 30
   # 12
-  batch_size: 80
+  batch_size: 40
   # 16
   num_workers: 8
   frame_num: 1024
@@ -46,7 +39,7 @@ optimizer :
     amsgrad : true
 ---
 loss:
-  type: 'mSDR' # SDR, mSDR, mwMSE, mwMSE_iSDR
+  type: 'mwMSE' # SDR, mSDR, mwMSE, mwMSE_iSDR
   iSDR:
   wSDR:
     alpha: 0.99
@@ -54,8 +47,8 @@ loss:
     alpha : 1.0
   mwMSE :
     alpha: 0.9
+    scale:  'log+1' # log,log+1,dB,none
     norm : 'norm_max_batch' # none, norm_max_batch, norm_max_freq
-    dB   : false
   mwMSE_iSDR:
     beta : 0.5
 ---

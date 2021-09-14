@@ -4,9 +4,9 @@ import librosa
 import numpy as np
 
 class TestsetUNET(torch.utils.data.Dataset):
-    def __init__(self, hp):
+    def __init__(self, hp,stft_root,target,form):
         self.stft_root = stft_root
-        self.num_frame = num_frame
+        self.hp = hp
 
         if type(target) == str : 
             self.data_list = [x for x in glob.glob(os.path.join(stft_root+'/noisy/', target, form), recursive=False) if not os.path.isdir(x)]
@@ -50,25 +50,27 @@ class TestsetUNET(torch.utils.data.Dataset):
             npy_noise =  np.pad(npy_noise,((0,0),(0,need),(0,0)),'constant',constant_values=0)
             npy_estim =  np.pad(npy_estim,((0,0),(0,need),(0,0)),'constant',constant_values=0)
 
-        torch_noisy = torch.from_numpy(npy_noisy)
-        torch_noise = torch.from_numpy(npy_noise)
-        torch_estim = torch.from_numpy(npy_estim)
-
-        torch_noisy = torch.sqrt(torch_noisy[:,:,0]**2 + torch_noisy[:,:,1]**2)
-        torch_estim = torch.sqrt(torch_estim[:,:,0]**2 + torch_estim[:,:,1]**2)
-        torch_noise = torch.sqrt(torch_noise[:,:,0]**2 + torch_noise[:,:,1]**2)
+        noisy = torch.from_numpy(npy_noisy)
+        noise = torch.from_numpy(npy_noise)
+        estim = torch.from_numpy(npy_estim)
 
         phase = None
-        if hp.model.UNET.input == 'noisy' : 
-            phase = torch.angle(torch_noisy[:,:,0] + torch_noisy[:,:,1]*1j)
+        if self.hp.model.UNET.input == 'noisy' : 
+            phase = torch.angle(noisy[:,:,0] + noisy[:,:,1]*1j)
         # estim
         else :
-            phase = torch.angle(torch_estim[:,:,0] + torch_estim[:,:,1]*1j)
+            phase = torch.angle(estim[:,:,0] + estim[:,:,1]*1j)
 
-        input = torch.stack((torch_noisy,torch_estim,torch_noise),0)
+        noisy = torch.sqrt(noisy[:,:,0]**2 + noisy[:,:,1]**2)
+        estim = torch.sqrt(estim[:,:,0]**2 + estim[:,:,1]**2)
+        noise = torch.sqrt(noise[:,:,0]**2 + noise[:,:,1]**2)
+
+        if self.hp.model.UNET.input == 'noisy' : 
+            input = torch.stack((noisy,estim,noise),0)
+        else :
+            input = torch.stack((estim,noisy,noise),0)
 
         data = {"input":input,"phase":phase}
-
 
         return data, target_length, data_dir, data_name
 

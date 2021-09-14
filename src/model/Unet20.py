@@ -14,7 +14,7 @@ class passing(nn.Module) :
         return x
 
 class Encoder(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding=None, padding_mode="zeros",dropout=0):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding=None, padding_mode="zeros",dropout=0,activation="LeakyReLU"):
         super().__init__()
         if padding is None:
             padding = [(i - 1) // 2 for i in kernel_size]  # 'SAME' padding
@@ -24,18 +24,28 @@ class Encoder(nn.Module):
 
         self.conv = conv(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, padding_mode=padding_mode)
         self.bn = bn(out_channels)
-        self.relu = nn.LeakyReLU(inplace=True)
+        self.acti = None
+        if activation == "LeakyReLU":
+            self.acti = nn.LeakyReLU(inplace=True)
+        elif activation == "SiLU":
+            self.acti = nn.SiLU(inplace=True)
+        elif activation == 'Softplus':
+            self.acti = nn.Softplus()
+        elif activation == 'PReLU':
+            self.acti = nn.PReLU()
+        else :
+            raise Exception("ERROR::Encoder:Unknown activation type " + str(activation))
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
-        x = self.relu(x)
+        x = self.acti(x)
         x = self.dropout(x)
         return x
 
 class Decoder(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, output_padding,padding=(0, 0)):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, output_padding,padding=(0, 0),activation="LeakyReLU"):
         super().__init__()
        
         tconv = nn.ConvTranspose2d
@@ -43,12 +53,22 @@ class Decoder(nn.Module):
         
         self.transconv = tconv(in_channels, out_channels, kernel_size=kernel_size, stride=stride, output_padding=output_padding,padding=padding)
         self.bn = bn(out_channels)
-        self.relu = nn.LeakyReLU(inplace=True)
+        self.acti = None
+        if activation == "LeakyReLU":
+            self.acti = nn.LeakyReLU(inplace=True)
+        elif activation == "SiLU":
+            self.acti = nn.SiLU(inplace=True)
+        elif activation == 'Softplus':
+            self.acti = nn.Softplus()
+        elif activation == 'PReLU':
+            self.acti = nn.PReLU()
+        else :
+            raise Exception("ERROR::Encoder:Unknown activation type " + str(activation))
 
     def forward(self, x):
         x = self.transconv(x)
         x = self.bn(x)
-        x = self.relu(x)
+        x = self.acti(x)
         return x
 
 class Unet20(nn.Module):
@@ -63,6 +83,7 @@ class Unet20(nn.Module):
         input_channels = hp.model.UNET.channels
         dropout = hp.model.UNET.dropout
         activation = hp.model.UNET.activation
+        mask_activation = hp.model.UNET.mask_activation
 
        
         model_complexity = int(model_complexity // 1.414)
@@ -173,7 +194,7 @@ class Unet20(nn.Module):
 
         for i in range(self.model_length):
             module = Encoder(self.enc_channels[i], self.enc_channels[i + 1], kernel_size=self.enc_kernel_sizes[i],
-                             stride=self.enc_strides[i], padding=self.enc_paddings[i],  padding_mode=padding_mode)
+                             stride=self.enc_strides[i], padding=self.enc_paddings[i],  padding_mode=padding_mode,dropout=dropout,activation=activation)
             self.add_module("encoder{}".format(i), module)
             self.encoders.append(module)
 
@@ -181,18 +202,24 @@ class Unet20(nn.Module):
 
         for i in range(self.model_length):
             module = Decoder(self.dec_channels[i] + self.enc_channels[self.model_length - i], self.dec_channels[i + 1], kernel_size=self.dec_kernel_sizes[i],
-                             stride=self.dec_strides[i], padding=self.dec_paddings[i], output_padding=self.dec_output_paddings[i],)
+                             stride=self.dec_strides[i], padding=self.dec_paddings[i], output_padding=self.dec_output_paddings[i],activation=activation)
             self.add_module("decoder{}".format(i), module)
             self.decoders.append(module)
 
         
         linear = nn.Conv2d(self.dec_channels[-1], 1, 1)
-        if activation == 'Sigmoid' : 
-            self.acti = nn.Sigmoid()
-        elif activation == 'LeakyReLU' : 
-            self.acti = nn.LeakyReLU()
-        elif activation == 'none':
-            self.acti = passing()
+        self.mask_acti = None
+        if mask_activation == 'Sigmoid' : 
+            self.mask_acti = nn.Sigmoid()
+        elif mask_activation == 'ReLU' : 
+            self.mask_acti = nn.ReLU()
+        elif mask_activation == 'Softplus':
+            # https://pytorch.org/docs/stable/generated/torch.nn.Softplus.html#torch.nn.Softplus
+            self.mask_acti = nn.Softplus()
+        elif mask_activation == "SiLU":
+            self.mask_acti = nn.SiLU()
+        elif mask_activation == 'none':
+            self.mask_acti = passing()
         else :
             raise Exception('ERROR:Unknown activation : ' + str(activation))
 
@@ -225,7 +252,7 @@ class Unet20(nn.Module):
 
         #print('p : ' +str(p.shape))
         mask = self.linear(p)
-        mask = self.acti(mask)
+        mask = self.mask_acti(mask)
         return mask[:,0,:,:]
     
 if __name__ == '__main__':

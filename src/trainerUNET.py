@@ -63,16 +63,20 @@ def logging(hp,model,writer,step):
     ## sample inference
     # [n_batch,n_channel,n_freq,n_frame]
     # real
-    mask = model(data_real[:, :hp.model.UNET.channels, :, :])
-    output_mag_real = data_real * mask
-    output_mag_real = torch.squeeze(output_mag_real,0)
 
-    # simu
-    mask = model(data_simu[:, :hp.model.UNET.channels, :, :])
-    if hp.model.UNET.input == 'noisy' :
+    #       B - 
+    #
+
+    if hp.model.UNET.method == 'masking': 
+        mask = model(data_real[:, :hp.model.UNET.channels, :, :])
+        output_mag_real = data_real * mask
+
+        mask = model(data_simu[:, :hp.model.UNET.channels, :, :])
         output_mag_simu = data_simu[0,0,:,:]*mask
-    else:
-        output_mag_simu = data_simu[0,1,:,:]*mask
+    else :
+        output_mag_real = model(data_real[:, :hp.model.UNET.channels, :, :])
+        output_mag_simu = model(data_simu[:, :hp.model.UNET.channels, :, :])
+    output_mag_real = torch.squeeze(output_mag_real,0)
     output_mag_simu = torch.squeeze(output_mag_simu,0)
 
     # torch -> numpy 
@@ -84,10 +88,10 @@ def logging(hp,model,writer,step):
     cplx_real = None
     if hp.model.UNET.input == 'noisy' :
         phase_real = np.angle(npy_real_noisy[:,:,0]+npy_real_noisy[:,:,1]*1j)
-        cplx_real = npy_mag_real[0,:,:]*np.exp(phase_real*1j)
+        cplx_real = npy_mag_real[:,:]*np.exp(phase_real*1j)
     else:
         phase_real = np.angle(npy_real_estim[:,:,0]+npy_real_estim[:,:,1]*1j)
-        cplx_real = npy_mag_real[1,:,:]*np.exp(phase_real*1j)
+        cplx_real = npy_mag_real[:,:]*np.exp(phase_real*1j)
 
     ## mag phase to cplx
     # mag * exp(1j*ang)
@@ -95,6 +99,9 @@ def logging(hp,model,writer,step):
     audio_real_output = librosa.istft(cplx_real)
     audio_real_noisy= librosa.istft(npy_real_noisy[:,:,0]+npy_real_noisy[:,:,1]*1j)
     audio_real_estim= librosa.istft(npy_real_estim[:,:,0]+npy_real_estim[:,:,1]*1j)
+
+    ## Normalization
+    audio_real_output = audio_real_output/np.max(audio_real_output)
 
     writer.log_audio(audio_real_output, 'real_output',step)
     writer.log_audio(audio_real_noisy, 'real_noisy', step)
@@ -174,9 +181,14 @@ if __name__ == '__main__':
     if hp.loss.type == 'mSDR':
         criterion = loss.mSDRLoss
         to_be_wav = True
+    elif hp.loss.type == 'wSDR':
+        criterion = loss.wSDRLoss
+        to_be_wav = True
     elif hp.loss.type == 'iSDR':
         criterion = loss.iSDRLoss
         to_be_wav = True
+    elif hp.loss.type == 'wMSE':
+        criterion = loss.wMSE
     elif hp.loss.type == 'mwMSE':
         criterion = loss.mwMSE
     else :
@@ -226,9 +238,13 @@ if __name__ == '__main__':
             input = batch_data["input"].to(device)
             clean= batch_data["clean"].to(device)
 
+
+            if hp.model.UNET.method == 'masking': 
+                mask = model(input[:,:hp.model.UNET.channels,:,:])
             # [n_batch, n_channel, n_freq, n_time]
-            mask = model(input[:,:hp.model.UNET.channels,:,:])
-            output = input[:, 0, :, :] * mask
+                output = input[:, 0, :, :] * mask
+            else :
+                output = model(input[:,:hp.model.UNET.channels,:,:])
 
             if to_be_wav :
                 output = output*torch.exp(batch_data['phase'][:,0,:,:].to(device)*1j)
@@ -240,7 +256,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-            print('TRAIN::Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, i+1, len(train_loader), loss.item()))
+            print('TRAIN::{} - Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(args.version_name,epoch+1, num_epochs, i+1, len(train_loader), loss.item()))
             train_loss+=loss.item()
 
             if step %  hp.train.summary_interval == 0:
@@ -257,9 +273,11 @@ if __name__ == '__main__':
                 input = batch_data["input"].to(device)
                 clean  = batch_data["clean"].to(device)
 
-                mask = model(input[:,:hp.model.UNET.channels,:,:])
-
-                output = input[:, 0, :, :] * mask
+                if hp.model.UNET.method == 'masking': 
+                    mask = model(input[:,:hp.model.UNET.channels,:,:])
+                    output = input[:, 0, :, :] * mask
+                else : 
+                    output  = model(input[:,:hp.model.UNET.channels,:,:])
 
                 if to_be_wav :
                     output = output*torch.exp(batch_data['phase'][:,0,:,:].to(device)*1j)
@@ -267,7 +285,7 @@ if __name__ == '__main__':
 
                 loss = criterion(output,clean,inSTFT=inSTFT).to(device)
                 
-                print('TEST::Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, j+1, len(val_loader), loss.item()))
+                print('TEST::{} - Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(args.version_name,epoch+1, num_epochs, j+1, len(val_loader), loss.item()))
                 val_loss +=loss.item()
 
             val_loss = val_loss/len(val_loader)
@@ -284,7 +302,7 @@ if __name__ == '__main__':
             ### Save model state
 
             #torch.save(model.state_dict(), str(modelsave_path)+ '/model_step_'+str(step)+'_loss_'+loss+'.pt')
-            torch.save(model.state_dict(), str(modelsave_path)+ '/model_step_'+str(step)+'.pt')
+            #torch.save(model.state_dict(), str(modelsave_path)+ '/model_step_'+str(step)+'.pt')
 
             if best_loss > val_loss:
                 torch.save(model.state_dict(), str(modelsave_path)+'/bestmodel.pt')
