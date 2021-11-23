@@ -43,13 +43,13 @@ loss:
   type: 'mwMSE' # SDR, mSDR, mwMSE, mwMSE_iSDR
   iSDR:
   wSDR:
-    alpha: 0.99
+    alpha: 0.999
   wMSE :
     alpha : 1.0
   mwMSE :
-    alpha: 0.9
+    alpha: 0.999
     scale:  'log+1' # log,log+1,dB,none
-    norm : 'norm_max_freq' # none, norm_max_batch, norm_max_freq
+    norm : 'norm_max_batch' # none, norm_max_batch, norm_max_freq
   mwMSE_iSDR:
     beta : 0.5
 ---

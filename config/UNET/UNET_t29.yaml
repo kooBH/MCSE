@@ -9,7 +9,7 @@ model :
     channels : 3
     version : 1
     dropout : 0.2
-    activation : 'LeakyReLU' # SiLU, LeakyReLU, none
+    activation : 'ReLU' # SiLU, LeakyReLU, PReLU,ReLU,none
     mask_activation : 'Softplus' # Sigmoid, Softplus,ReLU, none
 ---
 augment:
@@ -49,7 +49,7 @@ loss:
   mwMSE :
     alpha: 0.9
     scale:  'log+1' # log,log+1,dB,none
-    norm : 'norm_max_freq' # none, norm_max_batch, norm_max_freq
+    norm : 'norm_max_batch' # none, norm_max_batch, norm_max_freq
   mwMSE_iSDR:
     beta : 0.5
 ---

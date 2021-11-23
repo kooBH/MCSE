@@ -13,6 +13,8 @@ class passing(nn.Module) :
     def forward(self,x):
         return x
 
+
+
 class Encoder(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding=None, padding_mode="zeros",dropout=0,activation="LeakyReLU"):
         super().__init__()
@@ -33,6 +35,8 @@ class Encoder(nn.Module):
             self.acti = nn.Softplus()
         elif activation == 'PReLU':
             self.acti = nn.PReLU()
+        elif activation == 'ReLU':
+            self.acti = nn.ReLU()
         else :
             raise Exception("ERROR::Encoder:Unknown activation type " + str(activation))
         self.dropout = nn.Dropout(dropout)
@@ -62,6 +66,8 @@ class Decoder(nn.Module):
             self.acti = nn.Softplus()
         elif activation == 'PReLU':
             self.acti = nn.PReLU()
+        elif activation == 'ReLU':
+            self.acti = nn.ReLU()
         else :
             raise Exception("ERROR::Encoder:Unknown activation type " + str(activation))
 
@@ -70,6 +76,64 @@ class Decoder(nn.Module):
         x = self.bn(x)
         x = self.acti(x)
         return x
+
+class ResPath(nn.Module):
+    def __init__(self, channel):
+        super().__init__()
+        self.conv1 = nn.Sequential(
+                nn.Conv2d(channel, channel, kernel_size=3,stride=1,padding=1),
+                nn.BatchNorm2d(channel),
+                nn.ReLU(),
+                )
+        self.resconv1 = nn.Sequential(
+                nn.Conv2d(channel, channel, kernel_size=1,stride=1,padding=0),
+                nn.BatchNorm2d(channel),
+                nn.ReLU(),
+                )
+        self.conv2 = nn.Sequential(
+                nn.Conv2d(channel, channel, kernel_size=3,stride=1,padding=1),
+                nn.BatchNorm2d(channel),
+                nn.ReLU(),
+                )
+        self.resconv2 = nn.Sequential(
+                nn.Conv2d(channel, channel, kernel_size=1,stride=1,padding=0),
+                nn.BatchNorm2d(channel),
+                nn.ReLU(),
+                )
+        self.conv3 = nn.Sequential(
+                nn.Conv2d(channel, channel, kernel_size=3,stride=1,padding=1),
+                nn.BatchNorm2d(channel),
+                nn.ReLU(),
+                )
+        self.resconv3 = nn.Sequential(
+                nn.Conv2d(channel, channel, kernel_size=1,stride=1,padding=0),
+                nn.BatchNorm2d(channel),
+                nn.ReLU(),
+                )
+        self.conv4 = nn.Sequential(
+                nn.Conv2d(channel, channel, kernel_size=3,stride=1,padding=1),
+                nn.BatchNorm2d(channel),
+                nn.ReLU(),
+                )
+        self.resconv4 = nn.Sequential(
+                nn.Conv2d(channel, channel, kernel_size=1,stride=1,padding=0),
+                nn.BatchNorm2d(channel),
+                nn.ReLU(),
+                )
+    def forward(self, x):
+        x1 = self.conv1(x)
+        y1 = self.resconv1(x)
+        z1 = x1+y1
+        x2 = self.conv2(z1)
+        y2 = self.resconv2(z1)
+        z2 = x2+y2
+        x3 = self.conv3(z2)
+        y3 = self.resconv3(z2)
+        z3 = x3+y3
+        x4 = self.conv4(z3)
+        y4 = self.resconv4(z3)
+        z4 = x4+y4
+        return z4
 
 class Unet20(nn.Module):
     def __init__(self, hp,
@@ -84,6 +148,10 @@ class Unet20(nn.Module):
         dropout = hp.model.UNET.dropout
         activation = hp.model.UNET.activation
         mask_activation = hp.model.UNET.mask_activation
+
+        self.nhfft = hp.audio.frame/2 + 1
+
+        self.use_respath = hp.model.UNET.use_respath
 
        
         model_complexity = int(model_complexity // 1.414)
@@ -192,6 +260,7 @@ class Unet20(nn.Module):
         self.encoders = []
         self.model_length = model_depth // 2
 
+
         for i in range(self.model_length):
             module = Encoder(self.enc_channels[i], self.enc_channels[i + 1], kernel_size=self.enc_kernel_sizes[i],
                              stride=self.enc_strides[i], padding=self.enc_paddings[i],  padding_mode=padding_mode,dropout=dropout,activation=activation)
@@ -205,6 +274,13 @@ class Unet20(nn.Module):
                              stride=self.dec_strides[i], padding=self.dec_paddings[i], output_padding=self.dec_output_paddings[i],activation=activation)
             self.add_module("decoder{}".format(i), module)
             self.decoders.append(module)
+
+        if self.use_respath : 
+            self.respaths = [] 
+            for i in range(self.model_length) :
+                module = ResPath(self.enc_channels[i])
+                self.add_module("respath{}".format(i),module)
+                self.respaths.append(module)
 
         
         linear = nn.Conv2d(self.dec_channels[-1], 1, 1)
@@ -231,7 +307,10 @@ class Unet20(nn.Module):
 
         x_skip = []
         for i, encoder in enumerate(self.encoders):
-            x_skip.append(x)
+            if self.use_respath : 
+                x_skip.append(self.respaths[i](x))
+            else :
+                x_skip.append(x)
             x = encoder(x)
             #print("x{}".format(i), x.shape)
         # x_skip : x0=input x1 ... x9

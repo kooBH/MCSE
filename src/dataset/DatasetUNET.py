@@ -37,7 +37,7 @@ class DatasetUNET(torch.utils.data.Dataset):
         self.SNRs = hp.data.SNR
         self.target = self.root.split('/')[-2]
 
-        if self.target in ['CGMM_RLS_MPDR','CGMM_RLS_MPDR_norm_2','AUX_DC_IVA'] : 
+        if self.target in ['CGMM_RLS_MPDR','CGMM_RLS_MPDR_norm_2','AuxIVA_DC_SVE'] : 
             pass
         else :
             raise Exception('unsupported target ' + str(self.target) )

@@ -9,8 +9,9 @@ model :
     channels : 1
     version : 1
     dropout : 0.0 # 
-    activation : 'LeakyReLU' # LeakyReLU, SiLU, Softplus, PReLU
+    activation : 'LeakyReLU' # LeakyReLU, SiLU, Softplus, PReLU, ReLU
     mask_activation : 'Sigmoid' # Sigmoid, ReLU, Softplus,none
+    use_respath : false
 ---
 augment:
   type : 'spec'

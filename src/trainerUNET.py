@@ -67,9 +67,9 @@ def logging(hp,model,writer,step):
     #       B - 
     #
 
-    if hp.model.UNET.method == 'masking': 
+    if hp.model.UNET.method == 'masking':  
         mask = model(data_real[:, :hp.model.UNET.channels, :, :])
-        output_mag_real = data_real * mask
+        output_mag_real = data_real[0,0,:,:] * mask
 
         mask = model(data_simu[:, :hp.model.UNET.channels, :, :])
         output_mag_simu = data_simu[0,0,:,:]*mask
@@ -191,6 +191,8 @@ if __name__ == '__main__':
         criterion = loss.wMSE
     elif hp.loss.type == 'mwMSE':
         criterion = loss.mwMSE
+    elif hp.loss.type == 'MSE':
+        criterion = nn.MSELoss
     else :
         raise Exception('Unknown loss function : ' + str(hp.loss.type))
 

@@ -11,6 +11,7 @@ model :
     dropout : 0.2
     activation : 'LeakyReLU' # SiLU, LeakyReLU, none
     mask_activation : 'Softplus' # Sigmoid, Softplus,ReLU, none
+    use_respath : false
 ---
 augment:
   type: 'none'
@@ -43,13 +44,13 @@ loss:
   type: 'mwMSE' # SDR, mSDR, mwMSE, mwMSE_iSDR
   iSDR:
   wSDR:
-    alpha: 0.99
+    alpha: 0.999
   wMSE :
     alpha : 1.0
   mwMSE :
-    alpha: 0.9
+    alpha: 0.99
     scale:  'log+1' # log,log+1,dB,none
-    norm : 'norm_max_freq' # none, norm_max_batch, norm_max_freq
+    norm : 'norm_max_batch' # none, norm_max_batch, norm_max_freq
   mwMSE_iSDR:
     beta : 0.5
 ---
@@ -71,8 +72,8 @@ audio:
 ---
 data:
   SNR :  ['SNR-7','SNR-5','SNR0','SNR5','SNR7','SNR10']
-  #root: '/home/data/kbh/MCSE/AuxIVA_DC_SVE/'
-  root: '/home/data/kbh/MCSE/CGMM_RLS_MPDR/'
+  root: '/home/data/kbh/MCSE/AuxIVA_DC_SVE/'
+  #root: '/home/data/kbh/MCSE/CGMM_RLS_MPDR/'
   #test_root: '/home/data/kbh/3-channel-dnn/'
   test_root: '/home/data/kbh/3-channel-dnn/'
   sample_simu : 'dt05_caf_simu/F01_22HC010M_CAF'
