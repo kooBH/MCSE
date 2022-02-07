@@ -1,37 +1,20 @@
 # Tensorflow code -> Pytorch Code 
 # of vblez/Speech-enhancement
 # https://github.com/vbelz/Speech-enhancement/blob/master/model_unet.py
-from shutil import ExecError
 import torch
 import torch.nn as nn
 import sys
 sys.path.append("..")
 from  utils.TCN import TCN
-from torch import Tensor
 
-## Uformer Modules
-## https://arxiv.org/pdf/2111.06015.pdf
+## Module which does nothing 
+class passing(nn.Module) : 
+    def __init__(self):
+        super().__init__()
+        
+    def forward(self,x):
+        return x
 
-class EncoderDecoderAttention(nn.Module):
-    def __init__(self,channels) -> None :
-        super(EncoderDecoderAttention,self).__init__()
-        
-        # Encoder Kernel  
-        self.w_e = nn.Conv2d(in_channels=channels, out_channels=channels, kernel_size=(2,3),stride=1, padding="same", dilation=1)
-        # Decoder Kernel  
-        self.w_d = nn.Conv2d(in_channels=channels, out_channels=channels, kernel_size=(2,3),stride=1, padding="same", dilation=1)
-        # Attention Kernel  
-        self.w_a = nn.Conv2d(in_channels=channels, out_channels=channels, kernel_size=(2,3),stride=1, padding="same", dilation=1)
-        
-        self.sigma = nn.Sigmoid()
-        
-    def forward(self, d:Tensor, e:Tensor) -> Tensor:
-        ## (10) extracting high dimensional feature
-        g = self.sigma(self.w_e(e) + self.w_d(d))
-        
-        ## (11) multipling attention masking
-        d_hat = torch.mul(self.sigma(self.w_a(g)),d)
-        return d_hat
 
 
 class Encoder(nn.Module):
@@ -154,68 +137,22 @@ class ResPath(nn.Module):
         z4 = x4+y4
         return z4
 
-class OberservedAddition(nn.Module):
-# Inspired by 
-# Iwamoto, Kazuma, et al. "How Bad Are Artifacts?: Analyzing the Impact of Speech Enhancement Errors on ASR." arXiv preprint arXiv:2201.06685 (2022).
-# https://arxiv.org/abs/2201.06685
-
-    def __init__(self, method="none", dim=-1,factor=0.3):
-        super().__init__()
-        self.method = method
-        self.dim = dim
-        
-        if method == "conv":
-            self.OA = nn.Conv2d(2,1,1) 
-        elif method == "linear":
-            if dim == -1 :
-                raise Exception("ERROR::ObversedAddtion requires 'dim' for linear layer")
-            self.OA = nn.Linear(2*dim,dim)
-        elif method == 'const':
-            # self.factor = nn.Parameter(torch.ones(1))
-            self.factor = nn.Parameter(torch.tensor(factor))
-        elif method == 'fixed' : 
-            self.factor = factor
-        else :
-            self.OA = nn.Identity()
-
-    def forward(self, x, o):
-        # x : [B C F T]
-        # o : [B C F T]
-        if self.method == 'conv':
-            # concate on channel
-            return self.OA(torch.cat((x,o),dim=1))
-        elif self.method == 'linear' :
-            # concate on feature
-            return self.OA(torch.cat((x,o),dim=2))
-        elif self.method == 'const' or self.metohd == 'fixed':
-            return x + self.factor * o
-        else :
-            return self.OA(x)
-
 class Unet20(nn.Module):
     def __init__(self, hp,
-                 device='cuda:0',
                  model_complexity=45,
                  model_depth=20,
                  padding_mode="zeros",
-                 use_EDA=False, # Enable Encoder Decoder Attention
-                 OA_method = "none",
-                 OA_dim = 257,
-                 OA_factor=0.3
                  ):
         super().__init__()
 
         self.hp = hp
-        self.device = device
-        
         input_channels = hp.model.UNET.channels
         dropout = hp.model.UNET.dropout
         activation = hp.model.UNET.activation
         mask_activation = hp.model.UNET.mask_activation
-        
+
         self.nhfft = hp.audio.frame/2 + 1
 
-        # WIP : respath, EDA 맞추기 
         self.use_respath = hp.model.UNET.use_respath
 
        
@@ -265,6 +202,7 @@ class Unet20(nn.Module):
                                 (2, 1),
                                 (2, 1),
                                 (2, 1),]
+
         self.dec_channels = [0,
                                 model_complexity * 2,
                                 model_complexity * 2,
@@ -325,15 +263,6 @@ class Unet20(nn.Module):
         self.model_length = model_depth // 2
 
 
-        if use_EDA :
-            self.dec_channels *= 2
-            
-            self.EDA = []
-            for i in range(self.model_length):
-                module = EncoderDecoderAttention(self.enc_channels[self.model_length-i])
-                self.add_module("EDA{}".format(i),module)
-                self.EDA.append(module)
-
         for i in range(self.model_length):
             module = Encoder(self.enc_channels[i], self.enc_channels[i + 1], kernel_size=self.enc_kernel_sizes[i],
                              stride=self.enc_strides[i], padding=self.enc_paddings[i],  padding_mode=padding_mode,dropout=dropout,activation=activation)
@@ -389,15 +318,12 @@ class Unet20(nn.Module):
         elif mask_activation == "SiLU":
             self.mask_acti = nn.SiLU()
         elif mask_activation == 'none':
-            self.mask_acti = nn.Identity()
+            self.mask_acti = passing()
         else :
             raise Exception('ERROR:Unknown activation : ' + str(activation))
 
         self.add_module("linear", linear)
         self.padding_mode = padding_mode
-        
-        OA = OberservedAddition(method = OA_method,dim=OA_dim,factor=OA_factor)
-        self.add_module('OA',OA)
 
     def forward(self, x):        
         # ipnut : [ Batch Channel Freq Time]
@@ -438,15 +364,12 @@ class Unet20(nn.Module):
             # last layer of Decorders
             if i == self.model_length - 1:
                 break
+            
             p = torch.cat([p, x_skip[self.model_length - 1 - i]], dim=1)
 
         #print('p : ' +str(p.shape))
         mask = self.linear(p)
         mask = self.mask_acti(mask)
-        
-        # Observation Addition
-        mask_oberserved = torch.ones(mask.shape).to(self.device)
-        mask = self.OA(mask,mask_oberserved)
         return mask[:,0,:,:]
     
 if __name__ == '__main__':

@@ -134,3 +134,9 @@ dmypy.json
 
 # temp files
 *.swp
+
+# config file
+*.yaml
+
+# script
+*.sh

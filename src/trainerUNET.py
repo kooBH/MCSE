@@ -161,7 +161,12 @@ if __name__ == '__main__':
     # Set Model
     if hp.model.UNET.type == 'Unet20' : 
         print("model : Unet20")
-        model = Unet20(hp).to(device)
+        model = Unet20(hp,
+                       device=device,
+                       OA_method = hp.model.UNET.OA_method,
+                       OA_dim = hp.model.UNET.OA_dim,
+                       OA_factor = hp.model.UNET.OA_factor
+                       ).to(device)
     elif hp.model.UNET.type == 'TRU':
         print("model : UNET Tiny Recurrent Unet")
         model = UNET().to(device)
@@ -193,6 +198,9 @@ if __name__ == '__main__':
         criterion = loss.mwMSE
     elif hp.loss.type == 'MSE':
         criterion = nn.MSELoss
+    elif hp.loss.type == 'wMFCC':
+        criterion = loss.wMFCC
+        to_be_wav = True
     else :
         raise Exception('Unknown loss function : ' + str(hp.loss.type))
 
@@ -251,14 +259,20 @@ if __name__ == '__main__':
             if to_be_wav :
                 output = output*torch.exp(batch_data['phase'][:,0,:,:].to(device)*1j)
                 clean  = clean *torch.exp(batch_data['phase'][:,1,:,:].to(device)*1j)
-
-            loss = criterion(output,clean,inSTFT=inSTFT).to(device)
+            
+            if hp.loss.type == 'wSDR' : 
+                if hp.model.UNET.input == 'estim' :
+                    loss = criterion(output,input[:,1,:,:],clean,inSTFT=inSTFT).to(device)
+                else :
+                    loss = criterion(output,input[:,0,:,:],clean,inSTFT=inSTFT).to(device)
+            else : 
+                loss = criterion(output,clean,inSTFT=inSTFT).to(device)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            print('TRAIN::{} - Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(args.version_name,epoch+1, num_epochs, i+1, len(train_loader), loss.item()))
+            print('TRAIN::{} - Epoch [{}/{}], Step [{}/{}], Loss: {:.4e}'.format(args.version_name,epoch+1, num_epochs, i+1, len(train_loader), loss.item()))
             train_loss+=loss.item()
 
             if step %  hp.train.summary_interval == 0:
@@ -285,9 +299,15 @@ if __name__ == '__main__':
                     output = output*torch.exp(batch_data['phase'][:,0,:,:].to(device)*1j)
                     clean  = clean *torch.exp(batch_data['phase'][:,1,:,:].to(device)*1j)
 
-                loss = criterion(output,clean,inSTFT=inSTFT).to(device)
+                if hp.loss.type == 'wSDR' : 
+                    if hp.model.UNET.input == 'estim' :
+                        loss = criterion(output,input[:,1,:,:],clean,inSTFT=inSTFT).to(device)
+                    else :
+                        loss = criterion(output,input[:,0,:,:],clean,inSTFT=inSTFT).to(device)
+                else : 
+                    loss = criterion(output,clean,inSTFT=inSTFT).to(device)
                 
-                print('TEST::{} - Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(args.version_name,epoch+1, num_epochs, j+1, len(val_loader), loss.item()))
+                print('TEST::{} - Epoch [{}/{}], Step [{}/{}], Loss: {:.4e}'.format(args.version_name,epoch+1, num_epochs, j+1, len(val_loader), loss.item()))
                 val_loss +=loss.item()
 
             val_loss = val_loss/len(val_loader)

@@ -40,7 +40,6 @@ class TestsetUNET(torch.utils.data.Dataset):
         length = np.size(npy_noisy,1)
 
         ## zero-padding
-
         ## length must be multiply of 16
         target_length = int(16*np.floor(length/16)+16)
 

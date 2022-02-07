@@ -37,7 +37,7 @@ class DatasetUNET(torch.utils.data.Dataset):
         self.SNRs = hp.data.SNR
         self.target = self.root.split('/')[-2]
 
-        if self.target in ['CGMM_RLS_MPDR','CGMM_RLS_MPDR_norm_2','AuxIVA_DC_SVE'] : 
+        if self.target in ['CGMM_RLS_MPDR','CGMM_RLS_MPDR_norm_2','AuxIVA_DC_SVE','WPE_MLDR_OMLSA'] : 
             pass
         else :
             raise Exception('unsupported target ' + str(self.target) )
@@ -62,7 +62,7 @@ class DatasetUNET(torch.utils.data.Dataset):
         noisy = torch.load(os.path.join(root,SNR,'noisy')+'/'+file_name)
         estim= torch.load(os.path.join(root,SNR,'estimated_speech')+'/'+file_name)
         noise = torch.load(os.path.join(root,SNR,'estimated_noise')+'/'+file_name)
-        if  self.target == 'CGMM_RLS_MPDR_norm_2' : 
+        if  self.target == 'CGMM_RLS_MPDR_norm_2' or self.target == 'WPE_MLDR_OMLSA': 
             clean = torch.load(os.path.join(root,SNR,'clean')+'/'+file_name)
         else  :
             clean = torch.load(os.path.join(root,'clean')+'/'+file_name)
