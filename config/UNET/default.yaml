@@ -1,0 +1,90 @@
+model :
+  UNET : 
+    type: 'Unet20'
+    # num_frame must be multiple of 16
+    num_frame : 80
+    # input : 'noisy', 'estim'
+    input : 'noisy'
+    method : 'masking' # masking, mapping
+    channels : 1
+    version : 1
+    dropout : 0.0 # 
+    activation : 'LeakyReLU' # LeakyReLU, SiLU, Softplus, PReLU, ReLU
+    mask_activation : 'Sigmoid' # Sigmoid, ReLU, Softplus,none
+    use_respath : false
+    bottleneck : None
+    bottleneck_dropout : 0.0
+---
+augment:
+  type : 'spec'
+  spec:
+---
+train:
+  epoch: 10
+  # 12
+  batch_size: 12
+  # 16
+  num_workers: 8
+  frame_num: 1024
+  summary_interval: 10
+  validation_interval: 100
+  checkpoint_interval: 1000
+---
+optimizer : 
+  type: 'AdamW'
+  Adam : 
+    lr : 0.0001
+  Adabound:
+    initial: 0.001
+    final: 0.05
+  AdamW:
+    lr : 0.001
+    betas : [0.9,0.999]
+    weight_decay : 0.01
+    amsgrad : true
+---
+loss:
+  type: 'mSDR' # SDR, mSDR, mwMSE, mwMSE_iSDR
+  iSDR:
+  wSDR:
+    alpha: 0.99
+  wMSE :
+    alpha : 1.0
+  mwMSE :
+    alpha: 0.9
+    norm : 'norm_max_batch' # none, norm_max_batch, norm_max_freq
+    scale:  'log+1' # log,log+1,dB,none
+  mwMSE_iSDR:
+    beta : 0.5
+  wMFCC:
+    n_mfcc : 40
+    alpha : 0.99
+    log_mels: t
+---
+scheduler: # Plateau, oneCycle, CyclicLR, None
+  type: 'Plateau'
+  oneCycle:
+    max_lr: 0.01
+  Plateau:
+    mode: 'min'
+    patience: 2
+    factor: 0.5
+    min_lr: 0.000005
+---
+audio:
+  frame : 1024
+  shift : 256
+  n_mels: 40
+  samplerate : 16000
+---
+data:
+  SNR :  ['SNR-7','SNR-5','SNR0','SNR5','SNR7','SNR10']
+  #root: '/home/data/kbh/MCSE/AuxIVA_DC_SVE/'
+  root: '/home/data/kbh/MCSE/CGMM_RLS_MPDR/'
+  #test_root: '/home/data/kbh/3-channel-dnn/'
+  test_root: '/home/data/kbh/3-channel-dnn/'
+  sample_simu : 'dt05_caf_simu/F01_22HC010M_CAF'
+  sample_real : 'et05_str_real/F05_442C020V_STR'
+---
+  log:
+    root: '/home/nas/user/kbh/MCSE_UNET/'
